@@ -1,8 +1,10 @@
 #include "term.h"
 
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/ioctl.h>
+#include <termios.h>
 #include <unistd.h>
 
 typedef struct Char {
@@ -25,6 +27,11 @@ int term_init() {
 	size.y = termSize.ws_row;
 	buffer = malloc(size.x * size.y * sizeof(Char));
 	write(STDOUT_FILENO, ANSI_ENABLE_BUFFER "\x1b[?1007l\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l\x1b[?25l", sizeof(ANSI_ENABLE_BUFFER) + sizeof("\x1b[?1007l\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l\x1b[?25l") - 2);
+	struct termios t;
+	tcgetattr(STDIN_FILENO, &t);
+	t.c_lflag &= ~(ICANON | ECHO);
+	tcsetattr(STDIN_FILENO, TCSANOW, &t);
+	fcntl(STDIN_FILENO, F_SETFL, fcntl(STDIN_FILENO, F_GETFL, 0) | O_NONBLOCK);
 	return 0;
 }
 
@@ -86,17 +93,26 @@ void term_write_cbs(const char* s, const unsigned int colour, const unsigned int
 			cursor.y++;
 			cursor.x = startX;
 		}
-		const unsigned int index = cursor.x + cursor.y * size.x;
-		if (index >= size.x * size.y) {
-			return;
+		else if (c == '\t') {
+			cursor.x += 4;
 		}
-		buffer[index].c = c;
-		buffer[index].colour = colour;
-		buffer[index].background = background;
-		buffer[index].style = style;
-		cursor.x++;
+		else {
+			const unsigned int index = cursor.x + cursor.y * size.x;
+			if (index >= size.x * size.y) {
+				return;
+			}
+			buffer[index].c = c;
+			buffer[index].colour = colour;
+			buffer[index].background = background;
+			buffer[index].style = style;
+			cursor.x++;
+		}
 		s++;
 	}
+}
+
+int term_read() {
+	return getchar();
 }
 
 void term_render() {

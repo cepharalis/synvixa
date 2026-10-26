@@ -49,6 +49,8 @@ void term_write_cb(const char* s, unsigned int colour, unsigned int background);
 
 void term_write_cbs(const char* s, unsigned int colour, unsigned int background, unsigned int style);
 
+int term_read();
+
 void term_render();
 
 void term_destroy();
