@@ -32,6 +32,7 @@ int term_init() {
 	t.c_lflag &= ~(ICANON | ECHO);
 	tcsetattr(STDIN_FILENO, TCSANOW, &t);
 	fcntl(STDIN_FILENO, F_SETFL, fcntl(STDIN_FILENO, F_GETFL, 0) | O_NONBLOCK);
+	term_clear(TERM_DEFAULT);
 	return 0;
 }
 
@@ -50,9 +51,9 @@ vec2 term_get_cursor() {
 void term_clear(const unsigned int colour) {
 	for (unsigned int i = 0; i < size.x * size.y; i++) {
 		buffer[i].c = ' ';
-		buffer[i].colour = TERM_WHITE;
+		buffer[i].colour = TERM_DEFAULT;
 		buffer[i].background = colour;
-		buffer[i].style = TERM_NONE;
+		buffer[i].style = TERM_DEFAULT;
 	}
 	cursor = (vec2){.x = 0, .y = 0};
 }
@@ -74,15 +75,15 @@ unsigned int term_char_to_str(char* b, const unsigned char c) {
 }
 
 void term_write(const char* s) {
-	term_write_cbs(s, TERM_WHITE, TERM_BLACK, TERM_NONE);
+	term_write_cbs(s, TERM_DEFAULT, TERM_DEFAULT, TERM_DEFAULT);
 }
 
 void term_write_c(const char* s, const unsigned int colour) {
-	term_write_cbs(s, colour, TERM_BLACK, TERM_NONE);
+	term_write_cbs(s, colour, TERM_DEFAULT, TERM_DEFAULT);
 }
 
 void term_write_cb(const char* s, const unsigned int colour, const unsigned int background) {
-	term_write_cbs(s, colour, background, TERM_NONE);
+	term_write_cbs(s, colour, background, TERM_DEFAULT);
 }
 
 void term_write_cbs(const char* s, const unsigned int colour, const unsigned int background, const unsigned int style) {
@@ -116,23 +117,53 @@ int term_read() {
 }
 
 void term_render() {
-	write(STDOUT_FILENO, ANSI_CURSOR_POS, sizeof(ANSI_CURSOR_POS) - 1);
-	char b[7];
+	char b[size.x * size.y * 15];
 	unsigned int index = 0;
-	for (unsigned int i = 0; i < size.x * size.y; i++) {
-		unsigned char colour = buffer[i].colour;
-		if (colour & TERM_BRIGHT) {
-			colour &= ~TERM_BRIGHT;
-			colour += 60;
-		}
+	unsigned char previousStyle = TERM_DEFAULT;
+	unsigned char previousColour = TERM_DEFAULT;
+	unsigned char previousBackground = TERM_DEFAULT;
+	for (unsigned int y = 0; y < size.y; y++) {
 		b[index++] = '\x1b';
 		b[index++] = '[';
-		index += term_char_to_str(b + index, colour);
-		b[index++] = 'm';
-		b[index++] = buffer[i].c;
-		write(STDOUT_FILENO, b, index);
-		index = 0;
+		index += term_char_to_str(b + index, y + 1);
+		b[index++] = ';';
+		b[index++] = '1';
+		b[index++] = 'H';
+
+		for (unsigned int x = 0; x < size.x; x++) {
+			const unsigned int i = x + y * size.x;
+
+			const unsigned char style = buffer[i].style;
+			unsigned char colour = buffer[i].colour;
+			if (colour & TERM_BRIGHT) {
+				colour &= ~TERM_BRIGHT;
+				colour += 60;
+			}
+			unsigned char background = buffer[i].background;
+			if (background & TERM_BRIGHT) {
+				background &= ~TERM_BRIGHT;
+				background += 60;
+			}
+
+			if (i == 0 || previousStyle != style || previousColour != colour || previousBackground != background) {
+				b[index++] = '\x1b';
+				b[index++] = '[';
+				index += term_char_to_str(b + index, style);
+				b[index++] = ';';
+				index += term_char_to_str(b + index, colour);
+				b[index++] = ';';
+				index += term_char_to_str(b + index, background + 10);
+				b[index++] = 'm';
+
+				previousStyle = style;
+				previousColour = colour;
+				previousBackground = background;
+			}
+
+			b[index++] = buffer[i].c;
+		}
 	}
+	write(STDOUT_FILENO, b, index);
 	struct winsize termSize;
 	if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &termSize) == 0) {
 		size.x = termSize.ws_col;

@@ -9,6 +9,8 @@
 #define ANSI_RESET "\x1b[0m"
 #define ANSI_CURSOR_POS "\x1b[H"
 
+#define TERM_DEFAULT 0
+
 #define TERM_BLACK 30
 #define TERM_RED 31
 #define TERM_GREEN 32
@@ -19,7 +21,6 @@
 #define TERM_WHITE 37
 #define TERM_BRIGHT 128
 
-#define TERM_NONE 0
 #define TERM_BOLD 1
 #define TERM_ITALIC 3
 #define TERM_UNDERLINE 4
