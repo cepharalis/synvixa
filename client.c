@@ -2,46 +2,86 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/socket.h>
 #include <arpa/inet.h>
+#include <sys/socket.h>
 
-int main(int argc, char const *argv[]) {
-    // Check if an IP address was provided in the command line
-    if (argc != 2) {
-        printf("Usage: ./client <your_ip_address>\n");
-        return -1;
+#define LOCAL_PORT 8888
+#define BUFFER_SIZE 1024
+
+int main() {
+    int sock_fd;
+    struct sockaddr_in local_addr, peer_addr;
+    char peer_ip[100];
+    int peer_port;
+    char buffer[BUFFER_SIZE];
+    socklen_t addr_len = sizeof(struct sockaddr_in);
+
+    // 1. Create a standard UDP socket
+    if ((sock_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+        perror("Socket creation failed");
+        exit(EXIT_FAILURE);
     }
 
-    int sock = 0;
-    struct sockaddr_in serv_addr;
-    const char *message = "Hello from the other terminal!";
+    // Allow local address reuse
+    int reuse = 1;
+    setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
 
-    // 1. Create socket
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        printf("\n Socket creation error \n");
-        return -1;
+    // 2. Bind to local port
+    memset(&local_addr, 0, sizeof(local_addr));
+    local_addr.sin_family = AF_INET;
+    local_addr.sin_addr.s_addr = INADDR_ANY;
+    local_addr.sin_port = htons(LOCAL_PORT);
+
+    if (bind(sock_fd, (const struct sockaddr *)&local_addr, sizeof(local_addr)) < 0) {
+        perror("Bind failed");
+        close(sock_fd);
+        exit(EXIT_FAILURE);
     }
 
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(8080);
+    // 3. Manually exchange endpoints (Simulating the Signaling Server)
+    printf("Your local port is %d. Check your NAT-mapped public IP/Port.\n", LOCAL_PORT);
+    printf("Enter target peer's PUBLIC IP address: ");
+    scanf("%99s", peer_ip);
+    printf("Enter target peer's NAT-MAPPED PUBLIC Port: ");
+    scanf("%d", &peer_port);
 
-    // 2. Convert the text IP string into binary network format
-    if (inet_pton(AF_INET, argv[1], &serv_addr.sin_addr) <= 0) {
-        printf("\nInvalid address/ Address not supported \n");
-        return -1;
+    memset(&peer_addr, 0, sizeof(peer_addr));
+    peer_addr.sin_family = AF_INET;
+    peer_addr.sin_port = htons(peer_port);
+    inet_pton(AF_INET, peer_ip, &peer_addr.sin_addr);
+
+    // 4. Hole Punching Phase
+    // Send a burst of initial packets to force the local NAT to create a mapping rule
+    printf("Punching hole to %s:%d...\n", peer_ip, peer_port);
+    for (int i = 0; i < 5; i++) {
+        sendto(sock_fd, "PUNCH", 5, 0, (const struct sockaddr *)&peer_addr, addr_len);
+        usleep(100000); // Sleep 100ms between attempts
     }
 
-    // 3. Connect to your computer's IP address
-    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
-        printf("\nConnection Failed. Check IP or firewall.\n");
-        return -1;
+    // Set a timeout on receive so it doesn't block forever if a packet drops
+    struct timeval tv;
+    tv.tv_sec = 1;
+    tv.tv_usec = 0;
+    setsockopt(sock_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+
+    // 5. Establish Communication Loop
+    printf("Hole punched. Listening for peer and sending messages...\n");
+    while (1) {
+        // Try to read incoming data
+        int n = recvfrom(sock_fd, buffer, BUFFER_SIZE - 1, 0, (struct sockaddr *)&peer_addr, &addr_len);
+        if (n > 0) {
+            buffer[n] = '\0';
+            printf("\n[Peer]: %s\n", buffer);
+
+            // Send a response back immediately to keep the connection alive
+            sendto(sock_fd, "Hello Jago", 10, 0, (const struct sockaddr *)&peer_addr, addr_len);
+        }
+
+        // Send periodic keep-alive payloads to prevent NAT timeout
+        sendto(sock_fd, "Hello World", 11, 0, (const struct sockaddr *)&peer_addr, addr_len);
+        sleep(2);
     }
 
-    // 4. Send the text message packet over the socket
-    send(sock, message, strlen(message), 0);
-    printf("Message sent successfully!\n");
-
-    // Clean up socket
-    close(sock);
+    close(sock_fd);
     return 0;
 }
