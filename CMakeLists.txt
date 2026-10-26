@@ -4,7 +4,7 @@ project(synvixa)
 
 set(CMAKE_C_STANDARD 23)
 
-file(GLOB_RECURSE SRC_FILE CONFIGURE_DEPEnDS src/*.c)
+file(GLOB_RECURSE SRC_FILE CONFIGURE_DEPENDS src/*.c)
 add_executable(synvixa ${SRC_FILE})
 
 target_include_directories(synvixa PUBLIC src)
