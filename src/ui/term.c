@@ -24,7 +24,7 @@ int term_init() {
 	size.x = termSize.ws_col;
 	size.y = termSize.ws_row;
 	buffer = malloc(size.x * size.y * sizeof(Char));
-	write(STDOUT_FILENO, ANSI_ENABLE_BUFFER "\033[?1007l\033[?1000l\033[?1002l\033[?1003l\033[?1006l", sizeof(ANSI_ENABLE_BUFFER) + sizeof("\033[?1007l\033[?1000l\033[?1002l\033[?1003l\033[?1006l") - 2);
+	write(STDOUT_FILENO, ANSI_ENABLE_BUFFER "\x1b[?1007l\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l\x1b[?25l", sizeof(ANSI_ENABLE_BUFFER) + sizeof("\x1b[?1007l\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l\x1b[?25l") - 2);
 	return 0;
 }
 
