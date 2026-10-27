@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -19,7 +18,6 @@ int main() {
 	editor e = editor_new(&f);
 	bool render = true;
 	vec2 termSize = term_get_size();
-	unsigned int renderCount = 0;
 	while (1) {
 		render |= editor_update(&e);
 		const vec2 newSize = term_get_size();
@@ -31,7 +29,6 @@ int main() {
 			term_clear(TERM_DEFAULT);
 			editor_render(&e, (vec2){.x = 0, .y = 0}, term_get_size());
 			term_render();
-			printf("RENDER %u\n", renderCount++);
 			render = false;
 		}
 		usleep(50000);
