@@ -5,11 +5,12 @@
 
 int main() {
 	term_init();
-	file f;
-	char_vector_vector_init(&f.lines, 8);
-	char_vector line;
-	char_vector_init(&line, 0);
-	char_vector_vector_push(&f.lines, line);
+	file f = file_open("test.txt");
+	if (f.lines.size == 0) {
+		char_vector line;
+		char_vector_init(&line, 0);
+		char_vector_vector_push(&f.lines, line);
+	}
 	editor e = editor_new(&f);
 	bool render = true;
 	vec2 termSize = term_get_size();
