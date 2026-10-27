@@ -52,6 +52,12 @@ static inline T##_optional T##_vector_get(T##_vector* v, size_t i) { \
 		return t; \
 	} \
     return (T##_optional){v->data[i], true}; \
+} \
+static inline void T##_vector_from_data(T##_vector* v, T* data, size_t size) { \
+    v->data = malloc(size * sizeof(T)); \
+    memcpy(v->data, data, size * sizeof(T)); \
+    v->size = size; \
+    v->capacity = size; \
 }
 
 DEFINE_VECTOR(char)
