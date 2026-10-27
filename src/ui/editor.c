@@ -113,25 +113,39 @@ bool editor_update(editor* e) {
 	return dirty;
 }
 
-void editor_render(const editor* e, const vec2 pos, const vec2 size) {
+void editor_render(editor* e, const vec2 pos, const vec2 size) {
+	if (e->cursor.x >= size.x + e->scroll.x) {
+		e->scroll.x = e->cursor.x - size.x + 1;
+	}
+	else if (e->cursor.x < e->scroll.x) {
+		e->scroll.x = e->cursor.x;
+	}
+	if (e->cursor.y >= size.y + e->scroll.y) {
+		e->scroll.y = e->cursor.y - size.y + 1;
+	}
+	else if (e->cursor.y < e->scroll.y) {
+		e->scroll.y = e->cursor.y;
+	}
 	for (unsigned int y = 0; y < size.y; y++) {
 		const unsigned int line_number = y + e->scroll.y;
 		term_set_cursor((vec2){.x = pos.x, .y = pos.y + y});
 		if (line_number < e->file->lines.size) {
 			const char_vector* l = &e->file->lines.data[line_number];
 			const unsigned int line_pos = e->scroll.x;
-			if (line_pos < l->size) {
-				term_write_l(l->data + line_pos, l->size - line_pos);
+			unsigned int length = l->size - line_pos;
+			if (length > size.x) {
+				length = size.x;
 			}
+			term_write_l(l->data + line_pos, length);
 			if (e->cursor.y == line_number) {
-				unsigned int cursor_x = e->cursor.x;
+				unsigned int cursor_offset = 0;
 				for (unsigned int i = 0; i < e->cursor.x; i++) {
 					if (l->data[i] == '\t') {
-						cursor_x += 3;
+						cursor_offset += 3;
 					}
 				}
-				term_set_cursor((vec2){.x = pos.x + cursor_x, .y = pos.y + y});
-				if (cursor_x < l->size) {
+				term_set_cursor((vec2){.x = pos.x + e->cursor.x - e->scroll.x + cursor_offset, .y = pos.y + y});
+				if (e->cursor.x < l->size) {
 					term_write_ls(l->data + e->cursor.x, 1, TERM_UNDERLINE);
 				}
 				else {

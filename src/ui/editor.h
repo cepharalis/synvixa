@@ -13,4 +13,4 @@ editor editor_new(file* f);
 
 bool editor_update(editor* e);
 
-void editor_render(const editor* e, vec2 pos, vec2 size);
+void editor_render(editor* e, vec2 pos, vec2 size);
