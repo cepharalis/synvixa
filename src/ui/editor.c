@@ -86,12 +86,17 @@ bool editor_update(editor* e) {
 				e->cursor.x = l->size;
 			}
 			else if (c == '\n') {
-				if (e->cursor.x == l->size) {
-					char_vector line;
-					char_vector_init(&line, 0);
-					char_vector_vector_insert(&e->file->lines, ++e->cursor.y, line);
-					e->cursor.x = 0;
+				char_vector line;
+				char_vector_init(&line, 0);
+				char_vector_vector_insert(&e->file->lines, ++e->cursor.y, line);
+				if (e->cursor.x != l->size) {
+					char_vector* new_line = &e->file->lines.data[e->cursor.y];
+					while (e->cursor.x < l->size) {
+						char_vector_push(new_line, l->data[e->cursor.x]);
+						char_vector_remove(l, e->cursor.x);
+					}
 				}
+				e->cursor.x = 0;
 			}
 			else {
 				if (e->cursor.x == l->size) {
