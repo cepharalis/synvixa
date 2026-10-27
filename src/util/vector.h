@@ -12,15 +12,15 @@ typedef struct { \
     T* data; \
     size_t size, capacity; \
 } T##_vector; \
-void T##_vector_init(T##_vector* v, size_t cap) { \
+static inline void T##_vector_init(T##_vector* v, size_t cap) { \
     v->capacity = cap ? cap : 4; \
     v->size = 0; \
     v->data = malloc(v->capacity * sizeof(T)); \
 } \
-void T##_vector_free(T##_vector* v) { \
+static inline void T##_vector_free(T##_vector* v) { \
     if (v) { free(v->data); v->data = nullptr; v->size = v->capacity = 0; } \
 } \
-int T##_vector_insert(T##_vector* v, size_t i, T item) { \
+static inline int T##_vector_insert(T##_vector* v, size_t i, T item) { \
     if (i > v->size) return 0; \
     if (v->size >= v->capacity) { \
         T* t = realloc(v->data,  (v->capacity *= 2) * sizeof(T)); \
@@ -32,10 +32,10 @@ int T##_vector_insert(T##_vector* v, size_t i, T item) { \
     v->size++; \
     return 1; \
 } \
-int T##_vector_push(T##_vector* v, T item) { \
+static inline int T##_vector_push(T##_vector* v, T item) { \
     return T##_vector_insert(v, v->size++, item); \
 } \
-T##_optional T##_vector_remove(T##_vector* v, size_t i) { \
+static inline T##_optional T##_vector_remove(T##_vector* v, size_t i) { \
     if (i >= v->size) { \
 		T##_optional t; \
 		t.has_value = false; \
@@ -45,7 +45,7 @@ T##_optional T##_vector_remove(T##_vector* v, size_t i) { \
     if (i< --v->size) memmove(&v->data[i], &v->data[i + 1], (v->size - i) * sizeof(T)); \
     return (T##_optional){item, true}; \
 } \
-T##_optional T##_vector_get(T##_vector* v, size_t i) { \
+static inline T##_optional T##_vector_get(T##_vector* v, size_t i) { \
     if (i >= v->size) { \
 		T##_optional t; \
 		t.has_value = false; \
