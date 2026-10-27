@@ -113,7 +113,31 @@ void term_write_cbs(const char* s, const unsigned int colour, const unsigned int
 }
 
 int term_read() {
-	return getchar();
+	int c = getchar();
+	if (c != '\033') {
+		return c;
+	}
+	c = getchar();
+	if (c != '[') {
+		return EOF;
+	}
+	c = getchar();
+	switch (c) {
+		case 'A':
+			return TERM_UP_ARROW;
+		case 'B':
+			return TERM_DOWN_ARROW;
+		case 'C':
+			return TERM_RIGHT_ARROW;
+		case 'D':
+			return TERM_LEFT_ARROW;
+		case 'H':
+			return TERM_HOME;
+		case 'F':
+			return TERM_END;
+		default:
+			return EOF;
+	}
 }
 
 void term_render() {

@@ -25,6 +25,13 @@
 #define TERM_ITALIC 3
 #define TERM_UNDERLINE 4
 
+#define TERM_UP_ARROW 256
+#define TERM_DOWN_ARROW 257
+#define TERM_RIGHT_ARROW 258
+#define TERM_LEFT_ARROW 259
+#define TERM_HOME 260
+#define TERM_END 261
+
 typedef struct vec2 {
 	uint32_t x;
 	uint32_t y;
