@@ -1,4 +1,3 @@
-#include <stdlib.h>
 #include <unistd.h>
 
 #include "ui/editor.h"
@@ -7,13 +6,11 @@
 int main() {
 	term_init();
 	file f;
-	f.line_count = 5;
-	f.line_capacity = 10;
-	f.lines = malloc(sizeof(line) * f.line_capacity);
-	for (unsigned int i = 0; i < f.line_count; i++) {
-		f.lines[i].text_capacity = 16;
-		f.lines[i].text = malloc(f.lines[i].text_capacity);
-		f.lines[i].text_length = 0;
+	char_vector_vector_init(&f.lines, 8);
+	for (unsigned int i = 0; i < 8; i++) {
+		char_vector line;
+		char_vector_init(&line, 0);
+		char_vector_vector_push(&f.lines, line);
 	}
 	editor e = editor_new(&f);
 	bool render = true;

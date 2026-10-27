@@ -1,14 +1,10 @@
 #pragma once
 
-typedef struct line {
-	char* text;
-	int text_length;
-	int text_capacity;
-} line;
+#include "util/vector.h"
+
+DEFINE_VECTOR(char_vector)
 
 typedef struct file {
 	char* path;
-	line* lines;
-	int line_count;
-	int line_capacity;
+	char_vector_vector lines;
 } file;
