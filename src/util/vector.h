@@ -33,7 +33,7 @@ static inline int T##_vector_insert(T##_vector* v, size_t i, T item) { \
     return 1; \
 } \
 static inline int T##_vector_push(T##_vector* v, T item) { \
-    return T##_vector_insert(v, v->size++, item); \
+    return T##_vector_insert(v, v->size, item); \
 } \
 static inline T##_optional T##_vector_remove(T##_vector* v, size_t i) { \
     if (i >= v->size) { \
