@@ -4,6 +4,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <termios.h>
 #include <unistd.h>
@@ -87,25 +88,37 @@ unsigned int term_char_to_str(char* b, const unsigned char c) {
 }
 
 void term_write(const char* s) {
-	term_write_cbs(s, TERM_DEFAULT, TERM_DEFAULT, TERM_DEFAULT);
+	term_write_lcbs(s, strlen(s), TERM_DEFAULT, TERM_DEFAULT, TERM_DEFAULT);
 }
 
 void term_write_c(const char* s, const unsigned int colour) {
-	term_write_cbs(s, colour, TERM_DEFAULT, TERM_DEFAULT);
+	term_write_lcbs(s, strlen(s), colour, TERM_DEFAULT, TERM_DEFAULT);
 }
 
 void term_write_s(const char* s, const unsigned int style) {
-	term_write_cbs(s, TERM_DEFAULT, TERM_DEFAULT, style);
+	term_write_lcbs(s, strlen(s), TERM_DEFAULT, TERM_DEFAULT, style);
 }
 
 void term_write_cb(const char* s, const unsigned int colour, const unsigned int background) {
-	term_write_cbs(s, colour, background, TERM_DEFAULT);
+	term_write_lcbs(s, strlen(s), colour, background, TERM_DEFAULT);
 }
 
 void term_write_cbs(const char* s, const unsigned int colour, const unsigned int background, const unsigned int style) {
+	term_write_lcbs(s, strlen(s), colour, background, style);
+}
+
+void term_write_l(const char* s, const unsigned int length) {
+	term_write_lcbs(s, length, TERM_DEFAULT, TERM_DEFAULT, TERM_DEFAULT);
+}
+
+void term_write_ls(const char* s, const unsigned int length, const unsigned int style) {
+	term_write_lcbs(s, length, TERM_DEFAULT, TERM_DEFAULT, style);
+}
+
+void term_write_lcbs(const char* s, const unsigned int length, const unsigned int colour, const unsigned int background, const unsigned int style) {
 	const unsigned int startX = cursor.x;
-	while (*s) {
-		const char c = *s;
+	for (unsigned int i = 0; i < length; i++) {
+		const char c = s[i];
 		if (c == '\n') {
 			cursor.y++;
 			cursor.x = startX;
@@ -124,7 +137,6 @@ void term_write_cbs(const char* s, const unsigned int colour, const unsigned int
 			buffer[index].style = style;
 			cursor.x++;
 		}
-		s++;
 	}
 }
 

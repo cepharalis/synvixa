@@ -54,13 +54,19 @@ unsigned int term_char_to_str(char* b, unsigned char c);
 
 void term_write(const char* s);
 
-void term_write_c(const char* s, unsigned int colour);
-
 void term_write_s(const char* s, unsigned int style);
+
+void term_write_c(const char* s, unsigned int colour);
 
 void term_write_cb(const char* s, unsigned int colour, unsigned int background);
 
 void term_write_cbs(const char* s, unsigned int colour, unsigned int background, unsigned int style);
+
+void term_write_l(const char* s, unsigned int length);
+
+void term_write_ls(const char* s, unsigned int length, unsigned int style);
+
+void term_write_lcbs(const char* s, unsigned int length, unsigned int colour, unsigned int background, unsigned int style);
 
 int term_read();
 

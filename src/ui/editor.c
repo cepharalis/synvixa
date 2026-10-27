@@ -16,31 +16,67 @@ bool editor_update(editor* e) {
 		if (line_number < e->file->lines.size) {
 			char_vector* l = &e->file->lines.data[line_number];
 			if (c == TERM_BACKSPACE) {
-				if (e->cursor.x == l->size && l->size > 0) {
-					l->data[--l->size] = '\0';
-					e->cursor.x--;
+				if (e->cursor.x == 0) {
+					if (line_number != 0) {
+						char_vector* previous_line = &e->file->lines.data[line_number - 1];
+						e->cursor.x = previous_line->size;
+						for (unsigned int i = 0; i < l->size; i++) {
+							char_vector_push(previous_line, l->data[i]);
+						}
+						char_vector_vector_remove(&e->file->lines, line_number);
+						e->cursor.y--;
+					}
 				}
-				else if (e->cursor.x > 0) {
-					char_vector_remove(l, e->cursor.x - 1);
-					e->cursor.x--;
+				else {
+					char_vector_remove(l, --e->cursor.x);
 				}
 			}
 			else if (c == TERM_DELETE) {
-				if (e->cursor.x == l->size - 1) {
-					l->data[--l->size] = '\0';
-				}
-				else if (e->cursor.x != l->size) {
+				if (e->cursor.x < l->size) {
 					char_vector_remove(l, e->cursor.x);
+				}
+				else if (line_number < e->file->lines.size - 1) {
+					const char_vector* next_line = &e->file->lines.data[line_number + 1];
+					for (unsigned int i = 0; i < next_line->size; i++) {
+						char_vector_push(l, next_line->data[i]);
+					}
+					char_vector_vector_remove(&e->file->lines, line_number + 1);
 				}
 			}
 			else if (c == TERM_LEFT_ARROW) {
 				if (e->cursor.x > 0) {
 					e->cursor.x--;
 				}
+				else if (e->cursor.y > 0) {
+					e->cursor.y--;
+					e->cursor.x = e->file->lines.data[line_number - 1].size;
+				}
 			}
 			else if (c == TERM_RIGHT_ARROW) {
 				if (e->cursor.x < l->size) {
 					e->cursor.x++;
+				}
+				else if (e->cursor.y < e->file->lines.size - 1) {
+					e->cursor.y++;
+					e->cursor.x = 0;
+				}
+			}
+			else if (c == TERM_UP_ARROW) {
+				if (e->cursor.y > 0) {
+					e->cursor.y--;
+					const unsigned int line_size = e->file->lines.data[line_number - 1].size;
+					if (e->cursor.x > line_size) {
+						e->cursor.x = line_size;
+					}
+				}
+			}
+			else if (c == TERM_DOWN_ARROW) {
+				if (e->cursor.y < e->file->lines.size - 1) {
+					e->cursor.y++;
+					const unsigned int line_size = e->file->lines.data[line_number + 1].size;
+					if (e->cursor.x > line_size) {
+						e->cursor.x = line_size;
+					}
 				}
 			}
 			else if (c == TERM_HOME) {
@@ -50,8 +86,12 @@ bool editor_update(editor* e) {
 				e->cursor.x = l->size;
 			}
 			else if (c == '\n') {
-				e->cursor.y++;
-				e->cursor.x = 0;
+				if (e->cursor.x == l->size) {
+					char_vector line;
+					char_vector_init(&line, 0);
+					char_vector_vector_insert(&e->file->lines, ++e->cursor.y, line);
+					e->cursor.x = 0;
+				}
 			}
 			else {
 				if (e->cursor.x == l->size) {
@@ -76,16 +116,18 @@ void editor_render(const editor* e, const vec2 pos, const vec2 size) {
 			const char_vector* l = &e->file->lines.data[line_number];
 			const unsigned int line_pos = e->scroll.x;
 			if (line_pos < l->size) {
-				term_write(l->data + line_pos);
+				term_write_l(l->data + line_pos, l->size - line_pos);
 			}
 			if (e->cursor.y == line_number) {
-				const unsigned int cursor_x = e->cursor.x;
+				unsigned int cursor_x = e->cursor.x;
+				for (unsigned int i = 0; i < e->cursor.x; i++) {
+					if (l->data[i] == '\t') {
+						cursor_x += 3;
+					}
+				}
 				term_set_cursor((vec2){.x = pos.x + cursor_x, .y = pos.y + y});
 				if (cursor_x < l->size) {
-					char cursor_chars[2];
-					cursor_chars[0] = *(l->data + cursor_x);
-					cursor_chars[1] = '\0';
-					term_write_s(cursor_chars, TERM_UNDERLINE);
+					term_write_ls(l->data + e->cursor.x, 1, TERM_UNDERLINE);
 				}
 				else {
 					term_write_s(" ", TERM_UNDERLINE);
