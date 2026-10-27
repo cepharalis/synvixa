@@ -1,43 +1,57 @@
-#ifndef VECTOR_H
-#define VECTOR_H
+#pragma once
 
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct {
-    void **data;
-    size_t size, capacity;
-} Vector;
-
-static inline void vector_init(Vector *v, size_t cap) {
-    v->capacity = cap ? cap : 4;
-    v->size = 0;
-    v->data == malloc(v->capacity * sizeof(void *));
+#define DEFINE_VECTOR(T) \
+typedef struct { \
+	T value; \
+	bool has_value; \
+} T##_optional; \
+typedef struct { \
+    T* data; \
+    size_t size, capacity; \
+} T##_vector; \
+void T##_vector_init(T##_vector* v, size_t cap) { \
+    v->capacity = cap ? cap : 4; \
+    v->size = 0; \
+    v->data = malloc(v->capacity * sizeof(T)); \
+} \
+void T##_vector_free(T##_vector* v) { \
+    if (v) { free(v->data); v->data = nullptr; v->size = v->capacity = 0; } \
+} \
+int T##_vector_insert(T##_vector* v, size_t i, T item) { \
+    if (i > v->size) return 0; \
+    if (v->size >= v->capacity) { \
+        T* t = realloc(v->data,  (v->capacity *= 2) * sizeof(T)); \
+        if (!t) return 0; \
+        v->data = t; \
+    } \
+    if (i <v->size) memmove(&v->data[i + 1], &v->data[i], (v->size - i) * sizeof(T)); \
+    v->data[i] = item; \
+    v->size++; \
+    return 1; \
+} \
+int T##_vector_push(T##_vector* v, T item) { \
+    return T##_vector_insert(v, v->size++, item); \
+} \
+T##_optional T##_vector_remove(T##_vector* v, size_t i) { \
+    if (i >= v->size) { \
+		T##_optional t; \
+		t.has_value = false; \
+		return t; \
+	} \
+    T item = v->data[i]; \
+    if (i< --v->size) memmove(&v->data[i], &v->data[i + 1], (v->size - i) * sizeof(T)); \
+    return (T##_optional){item, true}; \
+} \
+T##_optional T##_vector_get(T##_vector* v, size_t i) { \
+    if (i >= v->size) { \
+		T##_optional t; \
+		t.has_value = false; \
+		return t; \
+	} \
+    return (T##_optional){v->data[i], true}; \
 }
 
-static inline void vector_free(Vector *v) {
-    if (v) { free(v->data); v->data = NULL; v->size = v->capacity = 0; }
-}
-
-static inline void vector_insert(Vector *v, size_t i, void *item) {
-    if (i > v->size) return 0;
-    if (v->size >= v->capacity) {
-        void **t = realloc(v->data,  (v->capacity *= 2) * sizeof(void *));
-        if (!t) return 0;
-        v->data = t;
-    }
-    if (i <v->size) memmove(&v->data[i + 1], &v->data[i], (v->size - i) * sizeof(void*));
-    v->data[i] = item;
-    v->size++;
-    return 1;
-}
-
-static inline in vector_push(Vector *v, void *item) {
-    return vector_insert(v, v->size++, item);
-}
-static inline void* vector_remove(Vector *v, size_t i) {
-    if (i >= v->size) return NULL;
-    void *item = v->data[i];
-    if (i< --v->size) memmove(&v->data[i], &v->data[i + 1], (v->size - i) * sizeof(void*));
-    return item;
-}
+DEFINE_VECTOR(char)
