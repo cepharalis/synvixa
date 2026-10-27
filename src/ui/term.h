@@ -25,12 +25,15 @@
 #define TERM_ITALIC 3
 #define TERM_UNDERLINE 4
 
+#define TERM_EOF (-1)
 #define TERM_UP_ARROW 256
 #define TERM_DOWN_ARROW 257
 #define TERM_RIGHT_ARROW 258
 #define TERM_LEFT_ARROW 259
 #define TERM_HOME 260
 #define TERM_END 261
+#define TERM_BACKSPACE 262
+#define TERM_DELETE 263
 
 typedef struct vec2 {
 	uint32_t x;
@@ -52,6 +55,8 @@ unsigned int term_char_to_str(char* b, unsigned char c);
 void term_write(const char* s);
 
 void term_write_c(const char* s, unsigned int colour);
+
+void term_write_s(const char* s, unsigned int style);
 
 void term_write_cb(const char* s, unsigned int colour, unsigned int background);
 

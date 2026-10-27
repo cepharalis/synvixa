@@ -76,38 +76,38 @@ long long line = 0;
 //         line_count++;
 //     }
 
-char filename[1024];
-int32_t target = 88432, window = 5;
-int32_t main(void) {
-    FILE *f = fopen(filename, "r");
-    char *line = NULL;
-    size_t cap = 0;
-
-
-    char **saved = malloc(2*window+1);
-    int32_t idx = 0;
-
-
-
-
-    int32_t n = 0;
-    while (getline(&line, &cap, f) != -1) {
-        n++;
-        if (n >= target - window && n <= target + window) {
-            saved[idx++] = strduo(line);
-        }
-        if (n == target + window) break;
-
-    }
-    for (int i = 0; i < idx; i++) {
-        printf("Line %d: %s", target - window + i, saved[i]);
-        free(saved[i]);
-    }
-    free(saved);
-    free(line);
-    fclose(f);
-    return 0;
-}
+// char filename[1024];
+// int32_t target = 88432, window = 5;
+// int32_t main(void) {
+//     FILE *f = fopen(filename, "r");
+//     char *line = NULL;
+//     size_t cap = 0;
+//
+//
+//     char **saved = malloc(2*window+1);
+//     int32_t idx = 0;
+//
+//
+//
+//
+//     int32_t n = 0;
+//     while (getline(&line, &cap, f) != -1) {
+//         n++;
+//         if (n >= target - window && n <= target + window) {
+//             saved[idx++] = strduo(line);
+//         }
+//         if (n == target + window) break;
+//
+//     }
+//     for (int i = 0; i < idx; i++) {
+//         printf("Line %d: %s", target - window + i, saved[i]);
+//         free(saved[i]);
+//     }
+//     free(saved);
+//     free(line);
+//     fclose(f);
+//     return 0;
+// }
 
 
 

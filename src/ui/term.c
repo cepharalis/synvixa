@@ -82,6 +82,10 @@ void term_write_c(const char* s, const unsigned int colour) {
 	term_write_cbs(s, colour, TERM_DEFAULT, TERM_DEFAULT);
 }
 
+void term_write_s(const char* s, const unsigned int style) {
+	term_write_cbs(s, TERM_DEFAULT, TERM_DEFAULT, style);
+}
+
 void term_write_cb(const char* s, const unsigned int colour, const unsigned int background) {
 	term_write_cbs(s, colour, background, TERM_DEFAULT);
 }
@@ -114,12 +118,18 @@ void term_write_cbs(const char* s, const unsigned int colour, const unsigned int
 
 int term_read() {
 	int c = getchar();
+	if (c == EOF) {
+		return TERM_EOF;
+	}
+	if (c == 127 || c == 8) {
+		return TERM_BACKSPACE;
+	}
 	if (c != '\033') {
 		return c;
 	}
 	c = getchar();
 	if (c != '[') {
-		return EOF;
+		return TERM_EOF;
 	}
 	c = getchar();
 	switch (c) {
@@ -135,13 +145,21 @@ int term_read() {
 			return TERM_HOME;
 		case 'F':
 			return TERM_END;
+		case 'P':
+			return TERM_DELETE;
+		case '3':
+			c = getchar();
+			if (c == '~') {
+				return TERM_DELETE;
+			}
+			return TERM_EOF;
 		default:
-			return EOF;
+			return TERM_EOF;
 	}
 }
 
 void term_render() {
-	char b[size.x * size.y * 15];
+	char b[size.x * size.y * 19];
 	unsigned int index = 0;
 	unsigned char previousStyle = TERM_DEFAULT;
 	unsigned char previousColour = TERM_DEFAULT;
@@ -172,12 +190,23 @@ void term_render() {
 			if (i == 0 || previousStyle != style || previousColour != colour || previousBackground != background) {
 				b[index++] = '\x1b';
 				b[index++] = '[';
-				index += term_char_to_str(b + index, style);
-				b[index++] = ';';
-				index += term_char_to_str(b + index, colour);
-				b[index++] = ';';
-				index += term_char_to_str(b + index, background + 10);
+				b[index++] = '0';
 				b[index++] = 'm';
+				b[index++] = '\x1b';
+				b[index++] = '[';
+				if (style != TERM_DEFAULT) {
+					index += term_char_to_str(b + index, style);
+					b[index++] = ';';
+				}
+				if (colour != TERM_DEFAULT) {
+					index += term_char_to_str(b + index, colour);
+					b[index++] = ';';
+				}
+				if (background != TERM_DEFAULT) {
+					index += term_char_to_str(b + index, background + 10);
+					b[index++] = ';';
+				}
+				b[index - 1] = 'm';
 
 				previousStyle = style;
 				previousColour = colour;
