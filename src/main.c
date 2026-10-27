@@ -1,4 +1,6 @@
+#include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "ui/editor.h"
 #include "ui/term.h"
@@ -15,9 +17,23 @@ int main() {
 		f.lines[i].text_length = 0;
 	}
 	editor e = editor_new(&f);
+	bool render = true;
+	vec2 termSize = term_get_size();
+	unsigned int renderCount = 0;
 	while (1) {
-		term_clear(TERM_DEFAULT);
-		editor_update(&e, (vec2){.x = 0, .y = 0}, term_get_size());
-		term_render();
+		render |= editor_update(&e);
+		const vec2 newSize = term_get_size();
+		if (termSize.x != newSize.x || termSize.y != newSize.y) {
+			termSize = newSize;
+			render = true;
+		}
+		if (render) {
+			term_clear(TERM_DEFAULT);
+			editor_render(&e, (vec2){.x = 0, .y = 0}, term_get_size());
+			term_render();
+			printf("RENDER %u\n", renderCount++);
+			render = false;
+		}
+		usleep(50000);
 	}
 }

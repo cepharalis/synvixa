@@ -11,4 +11,6 @@ typedef struct editor {
 
 editor editor_new(file* f);
 
-void editor_update(editor* e, vec2 pos, vec2 size);
+bool editor_update(editor* e);
+
+void editor_render(const editor* e, vec2 pos, vec2 size);

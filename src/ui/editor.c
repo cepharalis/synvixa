@@ -10,8 +10,9 @@ editor editor_new(file* f) {
 	return e;
 }
 
-void editor_update(editor* e, const vec2 pos, const vec2 size) {
+bool editor_update(editor* e) {
 	int c;
+	bool dirty = false;
 	while ((c = term_read()) != TERM_EOF) {
 		const unsigned int line_number = e->cursor.y;
 		if (line_number < e->file->line_count) {
@@ -56,6 +57,10 @@ void editor_update(editor* e, const vec2 pos, const vec2 size) {
 			else if (c == TERM_END) {
 				e->cursor.x = l->text_length;
 			}
+			else if (c == '\n') {
+				e->cursor.y++;
+				e->cursor.x = 0;
+			}
 			else {
 				if (l->text_length + 1 == l->text_capacity) {
 					l->text_capacity *= 2;
@@ -75,7 +80,12 @@ void editor_update(editor* e, const vec2 pos, const vec2 size) {
 				e->cursor.x++;
 			}
 		}
+		dirty = true;
 	}
+	return dirty;
+}
+
+void editor_render(const editor* e, const vec2 pos, const vec2 size) {
 	for (unsigned int y = 0; y < size.y; y++) {
 		const unsigned int line_number = y + e->scroll.y;
 		term_set_cursor((vec2){.x = pos.x, .y = pos.y + y});

@@ -1,6 +1,7 @@
 #include "term.h"
 
 #include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/ioctl.h>
@@ -18,6 +19,16 @@ static Char* buffer;
 static vec2 size;
 static vec2 cursor;
 
+static void resize_handler(int) {
+	struct winsize termSize;
+	if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &termSize) == 0) {
+		size.x = termSize.ws_col;
+		size.y = termSize.ws_row;
+		free(buffer);
+		buffer = malloc(size.x * size.y * sizeof(Char));
+	}
+}
+
 int term_init() {
 	struct winsize termSize;
 	if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &termSize) != 0) {
@@ -33,6 +44,7 @@ int term_init() {
 	tcsetattr(STDIN_FILENO, TCSANOW, &t);
 	fcntl(STDIN_FILENO, F_SETFL, fcntl(STDIN_FILENO, F_GETFL, 0) | O_NONBLOCK);
 	term_clear(TERM_DEFAULT);
+	signal(SIGWINCH, resize_handler);
 	return 0;
 }
 
@@ -217,13 +229,6 @@ void term_render() {
 		}
 	}
 	write(STDOUT_FILENO, b, index);
-	struct winsize termSize;
-	if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &termSize) == 0) {
-		size.x = termSize.ws_col;
-		size.y = termSize.ws_row;
-		free(buffer);
-		buffer = malloc(size.x * size.y * sizeof(Char));
-	}
 }
 
 void term_destroy() {
