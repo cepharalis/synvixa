@@ -19,6 +19,7 @@ file file_open(char* path) {
     		char_vector v;
     		char_vector_from_data(&v, line, length - 1);
     		char_vector_vector_push(&f.lines, v);
+    		length = 0;
     	}
     	else {
     		capacity *= 2;
