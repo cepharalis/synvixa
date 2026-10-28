@@ -1,11 +1,16 @@
+#include <stdio.h>
 #include <unistd.h>
 
 #include "ui/editor.h"
 #include "ui/term.h"
 
-int main() {
+int main(const int argc, char** argv) {
+	if (argc < 2) {
+		printf("Usage: %s <filename>\n", argv[0]);
+		return 1;
+	}
 	term_init();
-	file f = file_open("test.txt");
+	file f = file_open(argv[1]);
 	if (f.lines.size == 0) {
 		char_vector line;
 		char_vector_init(&line, 0);
