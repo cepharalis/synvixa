@@ -6,20 +6,32 @@
 #include <string.h>
 #include <unistd.h>
 
+typedef struct Char {
+	char c;
+	unsigned char colour;
+	unsigned char background;
+	unsigned char style;
+} Char;
+
+static Char* buffer;
+static vec2 size;
+static vec2 cursor;
+
 #if defined(__linux__) || defined(__APPLE__)
+#include <fcntl.h>
 #include <sys/ioctl.h>
 #include <termios.h>
 
 static vec2 get_term_size() {
-	struct winsize termSize;
-	vec2 size;
-	if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &termSize) == 0) {
-		size.x = termSize.ws_col;
-		size.y = termSize.ws_row;
+	struct winsize term_size;
+	auto s = (vec2){.x = 0, .y = 0};
+	if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &term_size) == 0) {
+		s.x = term_size.ws_col;
+		s.y = term_size.ws_row;
 		free(buffer);
-		buffer = malloc(size.x * size.y * sizeof(Char));
+		buffer = malloc(s.x * s.y * sizeof(Char));
 	}
-	return size;
+	return s;
 }
 #elifdef __WIN32
 #include <windows.h>
@@ -34,17 +46,6 @@ static vec2 get_term_size() {
 #else
 #error Unsupported platform
 #endif
-
-typedef struct Char {
-	char c;
-	unsigned char colour;
-	unsigned char background;
-	unsigned char style;
-} Char;
-
-static Char* buffer;
-static vec2 size;
-static vec2 cursor;
 
 static void resize_handler(int) {
 	size = get_term_size();
