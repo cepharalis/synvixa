@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include "plugin/plugins.h"
 #include "ui/editor.h"
 #include "ui/term.h"
 
@@ -24,6 +25,7 @@ int main(const int argc, char** argv) {
 		printf("Error setting up signal handler\n");
 		return 1;
 	}
+	plugins_load();
 	term_init();
 	file f = file_open(argv[1]);
 	if (f.lines.size == 0) {
@@ -50,5 +52,6 @@ int main(const int argc, char** argv) {
 		usleep(50000);
 	}
 	term_destroy();
+	plugins_unload();
 	return 0;
 }

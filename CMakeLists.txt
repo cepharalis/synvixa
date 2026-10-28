@@ -8,3 +8,7 @@ file(GLOB_RECURSE SRC_FILE CONFIGURE_DEPENDS src/*.c)
 add_executable(synvixa ${SRC_FILE})
 
 target_include_directories(synvixa PUBLIC src)
+
+set_target_properties(synvixa PROPERTIES ENABLE_EXPORTS TRUE)
+
+add_subdirectory(plugins)
