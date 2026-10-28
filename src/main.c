@@ -17,14 +17,7 @@ int main(const int argc, char** argv) {
 		printf("Usage: %s <filename>\n", argv[0]);
 		return 1;
 	}
-	struct sigaction action;
-	action.sa_handler = handle_sigint;
-	action.sa_flags = 0;
-	sigemptyset(&action.sa_mask);
-	if (sigaction(SIGINT, &action, nullptr) < 0) {
-		printf("Error setting up signal handler\n");
-		return 1;
-	}
+	signal(SIGINT, handle_sigint);
 	plugins_load();
 	term_init();
 	file f = file_open(argv[1]);

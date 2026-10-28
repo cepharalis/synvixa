@@ -1,13 +1,39 @@
 #include "term.h"
 
-#include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
+#if defined(__linux__) || defined(__APPLE__)
 #include <sys/ioctl.h>
 #include <termios.h>
-#include <unistd.h>
+
+static vec2 get_term_size() {
+	struct winsize termSize;
+	vec2 size;
+	if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &termSize) == 0) {
+		size.x = termSize.ws_col;
+		size.y = termSize.ws_row;
+		free(buffer);
+		buffer = malloc(size.x * size.y * sizeof(Char));
+	}
+	return size;
+}
+#elifdef __WIN32
+#include <windows.h>
+
+static vec2 get_term_size() {
+	CONSOLE_SCREEN_BUFFER_INFO buffer_info;
+	if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &buffer_info) == 0) {
+		return (vec2){.x = 0, .y = 0};
+	}
+	return (vec2){.x = buffer_info.dwSize.X, .y = buffer_info.dwSize.Y};
+}
+#else
+#error Unsupported platform
+#endif
 
 typedef struct Char {
 	char c;
@@ -21,24 +47,14 @@ static vec2 size;
 static vec2 cursor;
 
 static void resize_handler(int) {
-	struct winsize termSize;
-	if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &termSize) == 0) {
-		size.x = termSize.ws_col;
-		size.y = termSize.ws_row;
-		free(buffer);
-		buffer = malloc(size.x * size.y * sizeof(Char));
-	}
+	size = get_term_size();
 }
 
 int term_init() {
-	struct winsize termSize;
-	if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &termSize) != 0) {
-		return -1;
-	}
-	size.x = termSize.ws_col;
-	size.y = termSize.ws_row;
+	size = get_term_size();
 	buffer = malloc(size.x * size.y * sizeof(Char));
 	write(STDOUT_FILENO, ANSI_ENABLE_BUFFER "\x1b[?1007l\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l\x1b[?25l", sizeof(ANSI_ENABLE_BUFFER) + sizeof("\x1b[?1007l\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l\x1b[?25l") - 2);
+#if defined(__linux__) || defined(__APPLE__)
 	struct termios t;
 	tcgetattr(STDIN_FILENO, &t);
 	t.c_lflag &= ~(ICANON | ECHO);
@@ -46,6 +62,14 @@ int term_init() {
 	fcntl(STDIN_FILENO, F_SETFL, fcntl(STDIN_FILENO, F_GETFL, 0) | O_NONBLOCK);
 	term_clear(TERM_DEFAULT);
 	signal(SIGWINCH, resize_handler);
+#elifdef __WIN32
+	HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
+	DWORD mode;
+	GetConsoleMode(h, &mode);
+	SetConsoleMode(h, mode & ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT));
+#else
+#error Unsupported platform
+#endif
 	return 0;
 }
 

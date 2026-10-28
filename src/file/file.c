@@ -10,18 +10,25 @@ file file_open(char* path) {
     if (fp == nullptr) {
 		return f;
     }
-	char* line = nullptr;
-	size_t len = 0;
-	size_t line_length = 0;
-    while ((line_length = getline(&line, &len, fp)) != -1) {
-        char_vector v;
-    	if (line_length > 0 && line[line_length - 1] == '\n') {
-			char_vector_from_data(&v, line, line_length - 1);
+	size_t length = 0;
+	size_t capacity = 256;
+	char* line = malloc(capacity);
+    while (fgets(line + length, (int) (capacity - length), fp)) {
+    	length += strlen(line + length);
+    	if (length > 0  && line[length - 1] == '\n') {
+    		char_vector v;
+    		char_vector_from_data(&v, line, length - 1);
+    		char_vector_vector_push(&f.lines, v);
     	}
     	else {
-    		char_vector_from_data(&v, line, line_length);
+    		capacity *= 2;
+    		char* l = realloc(line, capacity);
+    		if (!l) {
+    			free(line);
+    			break;
+    		}
+    		line = l;
     	}
-    	char_vector_vector_push(&f.lines, v);
     }
 	free(line);
     fclose(fp);
