@@ -27,10 +27,11 @@ static void load_plugin(char* name) {
 	printf("Loading plugin: %s\n", name);
 	plugin p;
 	p.handle = handle;
+	language_vector_init(&p.languages, 0);
 	plugin_vector_push(&plugins, p);
 	void* load = dynamic_loader_get_symbol(handle, "load_plugin");
 	if (load) {
-		((void(*)())load)();
+		((void(*)(plugin*))load)(&p);
 	}
 }
 
@@ -80,7 +81,7 @@ void plugins_unload() {
 		dynamic_loader_handle handle = plugins.data[i].handle;
 		void* unload = dynamic_loader_get_symbol(handle, "unload_plugin");
 		if (unload) {
-			((void(*)())unload)();
+			((void(*)(plugin*))unload)(&plugins.data[i]);
 		}
 		dynamic_loader_unload(handle);
 	}

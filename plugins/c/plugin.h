@@ -1,5 +1,7 @@
 #pragma once
 
-void load_plugin();
+#include "plugin/plugins.h"
 
-void unload_plugin();
+void load_plugin(plugin* p);
+
+void unload_plugin(const plugin* p);

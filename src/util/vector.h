@@ -61,3 +61,4 @@ static inline void T##_vector_from_data(T##_vector* v, T* data, size_t size) { \
 }
 
 DEFINE_VECTOR(char)
+DEFINE_VECTOR(char_vector)

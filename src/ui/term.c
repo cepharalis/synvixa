@@ -61,7 +61,6 @@ int term_init() {
 	t.c_lflag &= ~(ICANON | ECHO);
 	tcsetattr(STDIN_FILENO, TCSANOW, &t);
 	fcntl(STDIN_FILENO, F_SETFL, fcntl(STDIN_FILENO, F_GETFL, 0) | O_NONBLOCK);
-	term_clear(TERM_DEFAULT);
 	signal(SIGWINCH, resize_handler);
 #elifdef __WIN32
 	HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
@@ -71,6 +70,7 @@ int term_init() {
 #else
 #error Unsupported platform
 #endif
+	term_clear(TERM_DEFAULT);
 	return 0;
 }
 

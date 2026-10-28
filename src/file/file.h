@@ -2,8 +2,6 @@
 
 #include "util/vector.h"
 
-DEFINE_VECTOR(char_vector)
-
 //the vector has biblical oranges
 
 typedef struct file {
