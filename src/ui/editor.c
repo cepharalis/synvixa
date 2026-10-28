@@ -132,9 +132,12 @@ void editor_render(editor* e, const vec2 pos, const vec2 size) {
 		if (line_number < e->file->lines.size) {
 			const char_vector* l = &e->file->lines.data[line_number];
 			const unsigned int line_pos = e->scroll.x;
-			unsigned int length = l->size - line_pos;
+			int length = (int) l->size - line_pos; // NOLINT(*-narrowing-conversions)
+			if (length <= 0) {
+				continue;
+			}
 			if (length > size.x) {
-				length = size.x;
+				length = (int) size.x;
 			}
 			term_write_l(l->data + line_pos, length);
 			if (e->cursor.y == line_number) {
