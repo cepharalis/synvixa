@@ -5,6 +5,8 @@ editor editor_new(file* f) {
 	e.file = f;
 	e.cursor = (vec2){.x = 0, .y = 0};
 	e.scroll = (vec2){.x = 0, .y = 0};
+	token_vector_init(&e.tokens, 0);
+	e.dirty = true;
 	return e;
 }
 
@@ -109,11 +111,22 @@ bool editor_update(editor* e) {
 			}
 		}
 		dirty = true;
+		e->dirty = true;
 	}
 	return dirty;
 }
 
 void editor_render(editor* e, const vec2 pos, const vec2 size) {
+	if (e->dirty) {
+		e->tokens.size = 0;
+		if (e->file->language) {
+			lexer l = lexer_new(&e->file->language->token_types, &e->file->lines);
+			while (lexer_has_next(&l)) {
+				token_vector_push(&e->tokens, lexer_next(&l));
+			}
+		}
+		e->dirty = false;
+	}
 	if (e->cursor.x >= size.x + e->scroll.x) {
 		e->scroll.x = e->cursor.x - size.x + 1;
 	}
@@ -126,18 +139,67 @@ void editor_render(editor* e, const vec2 pos, const vec2 size) {
 	else if (e->cursor.y < e->scroll.y) {
 		e->scroll.y = e->cursor.y;
 	}
+	size_t token = 0;
+	const token_vector* tokens = &e->tokens;
 	for (unsigned int y = 0; y < size.y; y++) {
 		const unsigned int line_number = y + e->scroll.y;
 		term_set_cursor((vec2){.x = pos.x, .y = pos.y + y});
 		if (line_number < e->file->lines.size) {
+			while (token < tokens->size && tokens->data[token].line < line_number) {
+				token++;
+			}
+			unsigned int colour = EDITOR_NORMAL;
 			const char_vector* l = &e->file->lines.data[line_number];
-			const unsigned int line_pos = e->scroll.x;
+			unsigned int line_pos = e->scroll.x;
 			int length = (int) l->size - line_pos; // NOLINT(*-narrowing-conversions)
 			if (length > 0) {
 				if (length > size.x) {
 					length = (int) size.x;
 				}
-				term_write_l(l->data + line_pos, length);
+				while (length > 0) {
+					while (token < tokens->size && tokens->data[token].line == line_number && tokens->data[token].pos + tokens->data[token].length <= line_pos) {
+						token++;
+					}
+					if (token == tokens->size || tokens->data[token].line != line_number) {
+						break;
+					}
+					const token_group group = e->file->language->token_types.data[tokens->data[token].type].group;
+					switch (group) {
+						case KEYWORD:
+							colour = EDITOR_KEYWORD;
+							break;
+						case STRING:
+							colour = EDITOR_STRING;
+							break;
+						case COMMENT:
+							colour = EDITOR_COMMENT;
+							break;
+						case CONSTANT:
+							colour = EDITOR_CONSTANT;
+							break;
+						case ERROR:
+							colour = EDITOR_ERROR;
+							break;
+						default:
+							colour = EDITOR_NORMAL;
+					}
+					int section_length = (int) tokens->data[token].pos + tokens->data[token].length - line_pos; // NOLINT(*-narrowing-conversions)
+					if (section_length > 0) {
+						if (section_length > length) {
+							section_length = length;
+						}
+						term_write_lc(l->data + line_pos, section_length, colour);
+						length -= section_length;
+						line_pos += section_length;
+					}
+					else {
+						break;
+					}
+				}
+				if (length > 0) {
+					colour = EDITOR_NORMAL;
+					term_write_lc(l->data + line_pos, length, colour);
+				}
 			}
 			if (e->cursor.y == line_number) {
 				unsigned int cursor_offset = 0;
@@ -150,15 +212,15 @@ void editor_render(editor* e, const vec2 pos, const vec2 size) {
 				if (e->cursor.x < l->size) {
 					const char* cursor_text = l->data + e->cursor.x;
 					if (cursor_text[0] == '\t') {
-						term_write_s(" ", TERM_UNDERLINE);
+						term_write_cs(" ", colour, TERM_UNDERLINE);
 						term_write("   ");
 					}
 					else {
-						term_write_ls(cursor_text, 1, TERM_UNDERLINE);
+						term_write_lcs(cursor_text, 1, colour, TERM_UNDERLINE);
 					}
 				}
 				else {
-					term_write_s(" ", TERM_UNDERLINE);
+					term_write_cs(" ", colour, TERM_UNDERLINE);
 				}
 			}
 		}
