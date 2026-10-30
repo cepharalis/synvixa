@@ -46,4 +46,6 @@ void load_plugin(plugin* p) {
 void unload_plugin(const plugin* p) {
 	free(p->languages.data[0].extensions);
 	token_type_vector_free(&p->languages.data[0].token_types);
+	free(p->languages.data[1].extensions);
+	token_type_vector_free(&p->languages.data[1].token_types);
 }
