@@ -12,12 +12,8 @@
 #define SHA256_DIGEST_SIZE 32U
 
 typedef struct {
-    uint32_t transfer_id;
-    uint32_t type;
-    uint32_t chunk_index;
-    uint32_t total_chunks;
-    uint32_t payload_length;
-    uint32_t reserved;
+    uint32_t transfer_id, type, chunk_index;
+    uint32_t total_chunks, payload_length, reserved;
 } PacketHeader;
 
 enum PacketType {
@@ -37,19 +33,22 @@ typedef struct {
 } Connection;
 
 typedef struct {
-    int part_fd;
-    int state_fd;
+    int part_fd, state_fd;
     unsigned char *bitmap;
     size_t bitmap_size;
-    char *part_path;
-    char *state_path;
+    char *part_path, *state_path;
 } ResumeStore;
 
-/* Public API declarations */
-int prepare_connection(Connection *connection, const char *ip, int port);
-int sha256_fd(int fd, uint64_t file_size, unsigned char digest[SHA256_DIGEST_SIZE]);
-int open_resume_store(const char *output_filename, uint64_t file_size, uint32_t total_chunks, const unsigned char hash[SHA256_DIGEST_SIZE], ResumeStore *store);
-void close_resume_store(ResumeStore *store);
-int serve_requests(Connection *connection, int source_fd, uint64_t file_size, uint32_t total_chunks, uint32_t transfer_id, const unsigned char source_hash[SHA256_DIGEST_SIZE]);
+int prepare_connection(Connection *, const char *, int);
+int sha256_fd(int, uint64_t, unsigned char [SHA256_DIGEST_SIZE]);
+int open_resume_store(const char *, uint64_t, uint32_t,
+                      const unsigned char [SHA256_DIGEST_SIZE],
+                      ResumeStore *);
+void close_resume_store(ResumeStore *);
+int serve_requests(Connection *, int, uint64_t, uint32_t, uint32_t,
+                   const unsigned char [SHA256_DIGEST_SIZE]);
 
-#endif /* FILESR_H */
+int fileSR_send(const char *, const char *, int);
+int fileSR_receive(const char *, const char *, int);
+
+#endif
