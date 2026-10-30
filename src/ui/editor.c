@@ -177,6 +177,9 @@ void editor_render(editor* e, const vec2 pos, const vec2 size) {
 						case CONSTANT:
 							colour = EDITOR_CONSTANT;
 							break;
+						case PREPROCESSOR:
+							colour = EDITOR_PREPROCESSOR;
+							break;
 						case ERROR:
 							colour = EDITOR_ERROR;
 							break;
