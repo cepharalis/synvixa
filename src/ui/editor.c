@@ -133,13 +133,12 @@ void editor_render(editor* e, const vec2 pos, const vec2 size) {
 			const char_vector* l = &e->file->lines.data[line_number];
 			const unsigned int line_pos = e->scroll.x;
 			int length = (int) l->size - line_pos; // NOLINT(*-narrowing-conversions)
-			if (length <= 0) {
-				continue;
+			if (length > 0) {
+				if (length > size.x) {
+					length = (int) size.x;
+				}
+				term_write_l(l->data + line_pos, length);
 			}
-			if (length > size.x) {
-				length = (int) size.x;
-			}
-			term_write_l(l->data + line_pos, length);
 			if (e->cursor.y == line_number) {
 				unsigned int cursor_offset = 0;
 				for (unsigned int i = 0; i < e->cursor.x; i++) {
@@ -149,7 +148,14 @@ void editor_render(editor* e, const vec2 pos, const vec2 size) {
 				}
 				term_set_cursor((vec2){.x = pos.x + e->cursor.x - e->scroll.x + cursor_offset, .y = pos.y + y});
 				if (e->cursor.x < l->size) {
-					term_write_ls(l->data + e->cursor.x, 1, TERM_UNDERLINE);
+					const char* cursor_text = l->data + e->cursor.x;
+					if (cursor_text[0] == '\t') {
+						term_write_s(" ", TERM_UNDERLINE);
+						term_write("   ");
+					}
+					else {
+						term_write_ls(cursor_text, 1, TERM_UNDERLINE);
+					}
 				}
 				else {
 					term_write_s(" ", TERM_UNDERLINE);
