@@ -11,4 +11,6 @@ typedef struct file {
 	language* language;
 } file;
 
-file file_open(char* path);
+file file_read(char* path);
+
+void file_write(const file* f);

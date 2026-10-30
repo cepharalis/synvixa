@@ -1,3 +1,5 @@
+// This comment was written with synvixa
+
 #include <signal.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -21,7 +23,7 @@ int main(const int argc, char** argv) {
 	signal(SIGINT, handle_sigint);
 	plugins_load();
 	term_init();
-	file f = file_open(argv[1]);
+	file f = file_read(argv[1]);
 	if (f.lines.size == 0) {
 		char_vector line;
 		char_vector_init(&line, 0);
@@ -60,6 +62,7 @@ int main(const int argc, char** argv) {
 		}
 		usleep(50000);
 	}
+	file_write(&f);
 	term_destroy();
 	plugins_unload();
 	return 0;
