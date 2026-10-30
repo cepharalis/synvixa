@@ -10,6 +10,7 @@ typedef enum token_group {
 	STRING,
 	COMMENT,
 	CONSTANT,
+	PREPROCESSOR,
 	ERROR
 } token_group;
 
