@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include "net/file_transfer/fileSR.h"
 #include "plugin/plugins.h"
 #include "ui/editor.h"
 #include "ui/term.h"
@@ -18,21 +17,13 @@ static void handle_sigint(int) {
 
 int main(const int argc, char** argv) {
 	if (argc < 2) {
-		printf("Usage: %s <ip address> [filename]\n", argv[0]);
+		printf("Usage: %s <filename>\n", argv[0]);
 		return 1;
 	}
 	signal(SIGINT, handle_sigint);
 	plugins_load();
 	term_init();
-	char* ip = argv[1];
-	file f;
-	if (argc > 2) {
-		f = file_read(argv[2]);
-	}
-	else {
-		f = file_read("temp.txt");
-		f.lines.size = 0;
-	}
+	file f = file_read(argv[1]);
 	if (f.lines.size == 0) {
 		char_vector line;
 		char_vector_init(&line, 0);
@@ -57,15 +48,7 @@ int main(const int argc, char** argv) {
 	bool render = true;
 	vec2 termSize = term_get_size();
 	while (running) {
-		if (fileSR_receive(f.path, ip, 8888) != -1) {
-			f = file_read(f.path);
-			render = true;
-		}
-		if (editor_update(&e)) {
-			render = true;
-			file_write(&f);
-			fileSR_send(f.path, ip, 8888);
-		}
+		render |= editor_update(&e);
 		const vec2 newSize = term_get_size();
 		if (termSize.x != newSize.x || termSize.y != newSize.y) {
 			termSize = newSize;
