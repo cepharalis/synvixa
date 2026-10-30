@@ -3,9 +3,10 @@
 void load_plugin(plugin* p) {
 	language cmake;
 	cmake.name = "CMake";
-	cmake.extensions = malloc(sizeof(char*));
+	cmake.extensions = malloc(sizeof(char*) * 2);
 	cmake.extensions[0] = "CMakeLists.txt";
-	cmake.extension_count = 1;
+	cmake.extensions[1] = ".cmake";
+	cmake.extension_count = 2;
 	token_type_vector_init(&cmake.token_types, 0);
 	token_type_vector_push(&cmake.token_types, token_type_new("comment", /*language=RegExp*/ "#(\\[\\[.*]])", COMMENT));
 	token_type_vector_push(&cmake.token_types, token_type_new("line_comment", /*language=RegExp*/ "#.*", COMMENT));
