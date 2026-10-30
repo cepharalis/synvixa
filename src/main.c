@@ -22,7 +22,7 @@ int main(const int argc, char** argv) {
 	}
 	signal(SIGINT, handle_sigint);
 	plugins_load();
-	term_init();
+	//term_init();
 	file f = file_read(argv[1]);
 	if (f.lines.size == 0) {
 		char_vector line;
@@ -44,6 +44,17 @@ int main(const int argc, char** argv) {
 			}
 		}
 	}
+	lexer l = lexer_new(&f.language->token_types, &f.lines);
+	while (lexer_has_next(&l)) {
+		const token t = lexer_next(&l);
+		if (t.type != -1) {
+			printf("%s, %s, length=%lu\n", f.language->token_types.data[t.type].name, t.value, strlen(t.value));
+		}
+		else {
+			printf("Unknown token, %s\n", t.value);
+		}
+	}
+	return 0;
 	editor e = editor_new(&f);
 	bool render = true;
 	vec2 termSize = term_get_size();

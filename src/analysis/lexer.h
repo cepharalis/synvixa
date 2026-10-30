@@ -5,11 +5,13 @@
 #include "util/vector.h"
 
 typedef struct token_type {
-	unsigned int type;
+	char* name;
 	regex_t pattern;
 } token_type;
 
 DEFINE_VECTOR(token_type)
+
+token_type token_type_new(char* name, const char* pattern);
 
 typedef struct token {
 	size_t type;
@@ -26,5 +28,7 @@ typedef struct lexer {
 } lexer;
 
 lexer lexer_new(token_type_vector* types, char_vector_vector* source);
+
+bool lexer_has_next(const lexer* l);
 
 token lexer_next(lexer* l);
