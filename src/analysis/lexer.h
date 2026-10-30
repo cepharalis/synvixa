@@ -4,21 +4,34 @@
 
 #include "util/vector.h"
 
+typedef enum token_group {
+	NORMAL,
+	KEYWORD,
+	STRING,
+	COMMENT,
+	CONSTANT,
+	ERROR
+} token_group;
+
 typedef struct token_type {
 	char* name;
 	regex_t pattern;
+	token_group group;
 } token_type;
 
 DEFINE_VECTOR(token_type)
 
-token_type token_type_new(char* name, const char* pattern);
+token_type token_type_new(char* name, const char* pattern, token_group group);
 
 typedef struct token {
 	size_t type;
 	char* value;
 	size_t line;
 	size_t pos;
+	size_t length;
 } token;
+
+DEFINE_VECTOR(token)
 
 typedef struct lexer {
 	token_type_vector* types;

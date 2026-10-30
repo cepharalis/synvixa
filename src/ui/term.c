@@ -128,6 +128,10 @@ void term_write_cb(const char* s, const unsigned int colour, const unsigned int 
 	term_write_lcbs(s, strlen(s), colour, background, TERM_DEFAULT);
 }
 
+void term_write_cs(const char* s, const unsigned int colour, const unsigned int style) {
+	term_write_lcbs(s, strlen(s), colour, TERM_DEFAULT, style);
+}
+
 void term_write_cbs(const char* s, const unsigned int colour, const unsigned int background, const unsigned int style) {
 	term_write_lcbs(s, strlen(s), colour, background, style);
 }
@@ -136,8 +140,16 @@ void term_write_l(const char* s, const unsigned int length) {
 	term_write_lcbs(s, length, TERM_DEFAULT, TERM_DEFAULT, TERM_DEFAULT);
 }
 
+void term_write_lc(const char* s, const unsigned int length, const unsigned int colour) {
+	term_write_lcbs(s, length, colour, TERM_DEFAULT, TERM_DEFAULT);
+}
+
 void term_write_ls(const char* s, const unsigned int length, const unsigned int style) {
 	term_write_lcbs(s, length, TERM_DEFAULT, TERM_DEFAULT, style);
+}
+
+void term_write_lcs(const char* s, const unsigned int length, const unsigned int colour, const unsigned int style) {
+	term_write_lcbs(s, length, colour, TERM_DEFAULT, style);
 }
 
 void term_write_lcbs(const char* s, const unsigned int length, const unsigned int colour, const unsigned int background, const unsigned int style) {
@@ -265,7 +277,13 @@ void term_render() {
 			b[index++] = buffer[i].c;
 		}
 	}
-	write(STDOUT_FILENO, b, index);
+	ssize_t written;
+	size_t offset = 0;
+	while ((written = write(STDOUT_FILENO, b + offset, index - offset)) != index - offset) {
+		if (written > 0) {
+			offset += written;
+		}
+	}
 }
 
 void term_destroy() {

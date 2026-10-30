@@ -1,12 +1,12 @@
 #include "lexer.h"
 
-token_type token_type_new(char* name, const char* pattern) {
+token_type token_type_new(char* name, const char* pattern, const token_group group) {
 	regex_t regex;
 	char* p = malloc(strlen(pattern) + 2);
 	p[0] = '^';
 	strcpy(p + 1, pattern);
 	regcomp(&regex, p, REG_EXTENDED);
-	return (token_type){.name = name, .pattern = regex};
+	return (token_type){.name = name, .pattern = regex, .group = group};
 }
 
 lexer lexer_new(token_type_vector* types, char_vector_vector* source) {
@@ -59,6 +59,7 @@ token lexer_next(lexer* l) {
 			t.line = l->line;
 			t.pos = l->pos;
 			l->pos += length;
+			t.length = length;
 			return t;
 		}
 	}
@@ -66,5 +67,5 @@ token lexer_next(lexer* l) {
 	value[0] = l->source->data[l->line].data[l->pos];
 	value[1] = '\0';
 	l->pos++;
-	return (token){.type = -1, .value = value, .line = l->line, .pos = l->pos};
+	return (token){.type = -1, .value = value, .line = l->line, .pos = l->pos, .length = 1};
 }

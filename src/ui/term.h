@@ -60,11 +60,17 @@ void term_write_c(const char* s, unsigned int colour);
 
 void term_write_cb(const char* s, unsigned int colour, unsigned int background);
 
+void term_write_cs(const char* s, unsigned int colour, unsigned int style);
+
 void term_write_cbs(const char* s, unsigned int colour, unsigned int background, unsigned int style);
 
 void term_write_l(const char* s, unsigned int length);
 
+void term_write_lc(const char* s, unsigned int length, unsigned int colour);
+
 void term_write_ls(const char* s, unsigned int length, unsigned int style);
+
+void term_write_lcs(const char* s, unsigned int length, unsigned int colour, unsigned int style);
 
 void term_write_lcbs(const char* s, unsigned int length, unsigned int colour, unsigned int background, unsigned int style);
 
