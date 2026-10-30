@@ -13,4 +13,6 @@ DEFINE_VECTOR(plugin);
 
 int plugins_load();
 
+plugin_vector* plugins_get();
+
 void plugins_unload();

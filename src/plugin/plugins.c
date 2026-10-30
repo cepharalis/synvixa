@@ -28,14 +28,15 @@ static void load_plugin(char* name) {
 	plugin p;
 	p.handle = handle;
 	language_vector_init(&p.languages, 0);
-	plugin_vector_push(&plugins, p);
 	void* load = dynamic_loader_get_symbol(handle, "load_plugin");
 	if (load) {
 		((void(*)(plugin*))load)(&p);
 	}
+	plugin_vector_push(&plugins, p);
 }
 
 int plugins_load() {
+	plugin_vector_init(&plugins, 0);
 	const char* extension = dynamic_loader_file_extension();
 #if defined(__linux__) || defined(__APPLE__)
 	DIR* dir = opendir("plugins");
@@ -73,6 +74,10 @@ int plugins_load() {
 #error Unsupported platform
 #endif
 	return 0;
+}
+
+plugin_vector* plugins_get() {
+	return &plugins;
 }
 
 void plugins_unload() {

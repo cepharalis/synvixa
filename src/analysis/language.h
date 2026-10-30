@@ -1,7 +1,6 @@
 #pragma once
 
 #include "lexer.h"
-#include "file/file.h"
 
 typedef struct language {
 	char* name;

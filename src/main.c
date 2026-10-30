@@ -5,6 +5,7 @@
 #include "plugin/plugins.h"
 #include "ui/editor.h"
 #include "ui/term.h"
+#include "util/string_util.h"
 
 static volatile sig_atomic_t running = 1;
 
@@ -25,6 +26,21 @@ int main(const int argc, char** argv) {
 		char_vector line;
 		char_vector_init(&line, 0);
 		char_vector_vector_push(&f.lines, line);
+	}
+	const plugin_vector* plugins = plugins_get();
+	f.language = nullptr;
+	for (int i = 0; i < plugins->size; i++) {
+		const language_vector* languages = &plugins->data[i].languages;
+		for (int j = 0; j < languages->size; j++) {
+			language* language = &languages->data[j];
+			char** extensions = language->extensions;
+			for (int k = 0; k < language->extension_count; k++) {
+				if (string_ends_with(f.path, extensions[k])) {
+					f.language = language;
+					break;
+				}
+			}
+		}
 	}
 	editor e = editor_new(&f);
 	bool render = true;

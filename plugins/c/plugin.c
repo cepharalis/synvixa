@@ -4,6 +4,7 @@ void load_plugin(plugin* p) {
 	language c;
 	c.name = "C";
 	c.extensions = malloc(sizeof(char*));
+	c.extensions[0] = "c";
 	c.extension_count = 1;
 	token_type_vector_init(&c.token_types, 0);
 	language_vector_push(&p->languages, c);

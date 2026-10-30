@@ -2,7 +2,7 @@
 
 #include <regex.h>
 
-#include "file/file.h"
+#include "util/vector.h"
 
 typedef struct token_type {
 	unsigned int type;

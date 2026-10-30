@@ -6,6 +6,7 @@ file file_open(char* path) {
 	file f;
 	char_vector_vector_init(&f.lines, 0);
     f.path = path;
+	f.language = nullptr;
     FILE* fp = fopen(path, "r");
     if (fp == nullptr) {
 		return f;
