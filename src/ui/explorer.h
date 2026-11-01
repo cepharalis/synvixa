@@ -23,6 +23,7 @@ typedef struct explorer {
     int top_idx;
     bool dirty;
     bool active;
+	int found;
 } explorer;
 
 explorer explorer_new(void);

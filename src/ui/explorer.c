@@ -12,6 +12,7 @@ explorer explorer_new(void) {
     e.item_count = 0;
     e.dirty = true;
     e.active = true;
+	e.found = -1;
 
     if (getcwd(e.cwd, sizeof(e.cwd)) == NULL) {
         strcpy(e.cwd, ".");
@@ -85,9 +86,14 @@ bool explorer_update(explorer *e, int c) {
         }
     }
     else if (c == '\n' || c == TERM_RIGHT_ARROW || c == 'l') {
-        if (e->item_count > 0 && e->items[e->selected].is_dir) {
-            chdir(e->items[e->selected].name);
-            explorer_refresh_dir(e);
+        if (e->item_count > 0) {
+        	if (e->items[e->selected].is_dir) {
+        		chdir(e->items[e->selected].name);
+        		explorer_refresh_dir(e);
+        	}
+        	else {
+        		e->found = e->selected;
+        	}
             dirty = true;
         }
     }

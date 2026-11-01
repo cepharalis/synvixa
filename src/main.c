@@ -10,11 +10,12 @@
 #include "net/socket.h"
 #include "plugin/plugins.h"
 #include "ui/editor.h"
+#include "ui/explorer.h"
 #include "ui/term.h"
 #include "util/string_util.h"
 
 #define PACKET_DISCONNECT 0
-#define PORT 25565
+#define PORT 8888
 
 static volatile sig_atomic_t running = 1;
 
@@ -26,8 +27,8 @@ static void handle_sigint(int) {
 
 int main(const int argc, char** argv) {
 	const bool client = argc == 3 && strcmp(argv[1], "--ip") == 0;
-	if (argc != 2 && !client) {
-		printf("Usage:\n\t%s <filename>\n\t%s --ip <ip_address>\n", argv[0], argv[0]);
+	if (argc != 2 && argc != 1 && !client) {
+		printf("Usage:\n\t%s [filename]\n\t%s --ip <ip_address>\n", argv[0], argv[0]);
 		return 1;
 	}
 	signal(SIGINT, handle_sigint);
@@ -62,17 +63,43 @@ int main(const int argc, char** argv) {
 			return 1;
 		}
 		f = file_receive(&client_socket);
+		term_init();
 	}
 	else {
-		server_socket = server_socket_open(PORT);
-		f = file_read(argv[1]);
+		if (argc == 1) {
+			term_init();
+			explorer e = explorer_new();
+			term_clear(TERM_DEFAULT);
+			explorer_render(&e, (vec2){.x = 0, .y = 0}, term_get_size());
+			term_render();
+			while (running) {
+				if (explorer_update(&e, term_read())) {
+					term_clear(TERM_DEFAULT);
+					explorer_render(&e, (vec2){.x = 0, .y = 0}, term_get_size());
+					term_render();
+					if (!e.active) {
+						term_destroy();
+						return 0;
+					}
+					if (e.found >= 0) {
+						break;
+					}
+				}
+				usleep(50000);
+			}
+			f = file_read(e.items[e.found].name);
+		}
+		else {
+			f = file_read(argv[1]);
+			term_init();
+		}
 		if (f.lines.size == 0) {
 			char_vector line;
 			char_vector_init(&line, 0);
 			char_vector_vector_push(&f.lines, line);
 		}
+		server_socket = server_socket_open(PORT);
 	}
-	term_init();
 	const plugin_vector* plugins = plugins_get();
 	f.language = nullptr;
 	for (int i = 0; i < plugins->size; i++) {
