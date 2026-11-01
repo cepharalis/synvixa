@@ -112,6 +112,15 @@ unsigned int term_char_to_str(char* b, const unsigned char c) {
 	return 1;
 }
 
+void term_clear_line(const uint32_t line) {
+	for (unsigned int x = 0; x < size.x; x++) {
+		buffer[line * size.x + x].c = ' ';
+		buffer[line * size.x + x].colour = TERM_DEFAULT;
+		buffer[line * size.x + x].background = TERM_DEFAULT;
+		buffer[line * size.x + x].style = TERM_DEFAULT;
+	}
+}
+
 void term_write(const char* s) {
 	term_write_lcbs(s, strlen(s), TERM_DEFAULT, TERM_DEFAULT, TERM_DEFAULT);
 }

@@ -170,8 +170,8 @@ int main(const int argc, char** argv) {
 		usleep(50000);
 	}
 stop:
-	term_destroy();
 	if (client) {
+		term_destroy();
 		if (client_socket.open) {
 			char id = PACKET_DISCONNECT;
 			socket_write(&client_socket, &id, 1);
@@ -188,8 +188,20 @@ stop:
 			socket_close(&clients[i]);
 		}
 		server_socket_close(&server_socket);
+		if (f.modified) {
+			vec2 size = term_get_size();
+			term_clear_line(size.y - 1);
+			term_set_cursor((vec2){.x = 0, .y = size.y - 1});
+			term_write("Save modifications [Y/n]?");
+			term_render();
+			int c;
+			while ((c = term_read()) == -1) {}
+			if (c != 'n' && c != 'N') {
+				file_write(&f);
+			}
+		}
+		term_destroy();
 	}
-	file_write(&f);
 	plugins_unload();
 	return 0;
 }

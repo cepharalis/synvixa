@@ -35,10 +35,12 @@ bool editor_update(editor* e, const net_socket* sockets, const int socket_count)
 						}
 						char_vector_vector_remove(&e->file->lines, line_number);
 						e->cursor.y--;
+						e->file->modified = true;
 					}
 				}
 				else {
 					char_vector_remove(l, --e->cursor.x);
+					e->file->modified = true;
 				}
 			}
 			else if (c == TERM_DELETE) {
@@ -52,6 +54,7 @@ bool editor_update(editor* e, const net_socket* sockets, const int socket_count)
 				}
 				if (e->cursor.x < l->size) {
 					char_vector_remove(l, e->cursor.x);
+					e->file->modified = true;
 				}
 				else if (line_number < e->file->lines.size - 1) {
 					const char_vector* next_line = &e->file->lines.data[line_number + 1];
@@ -59,6 +62,7 @@ bool editor_update(editor* e, const net_socket* sockets, const int socket_count)
 						char_vector_push(l, next_line->data[i]);
 					}
 					char_vector_vector_remove(&e->file->lines, line_number + 1);
+					e->file->modified = true;
 				}
 			}
 			else if (c == TERM_LEFT_ARROW) {
@@ -125,6 +129,7 @@ bool editor_update(editor* e, const net_socket* sockets, const int socket_count)
 					socket_write(&sockets[i], packet, 13);
 				}
 				e->cursor.x = 0;
+				e->file->modified = true;
 			}
 			else {
 				if (e->cursor.x == l->size) {
@@ -143,6 +148,7 @@ bool editor_update(editor* e, const net_socket* sockets, const int socket_count)
 					socket_write(&sockets[i], packet, 14);
 				}
 				e->cursor.x++;
+				e->file->modified = true;
 			}
 		}
 		dirty = true;
@@ -160,6 +166,7 @@ void editor_process_packet(editor* e, const char id, const char* packet) {
 			e->cursor.x++;
 		}
 		e->dirty = true;
+		e->file->modified = true;
 	}
 	else if (id == EDITOR_PACKET_ADD_LINE) {
 		vec2 pos;
@@ -183,6 +190,7 @@ void editor_process_packet(editor* e, const char id, const char* packet) {
 			e->cursor.x -= pos.x;
 		}
 		e->dirty = true;
+		e->file->modified = true;
 	}
 	else if (id == EDITOR_PACKET_REMOVE_CHAR) {
 		vec2 pos;
@@ -205,6 +213,7 @@ void editor_process_packet(editor* e, const char id, const char* packet) {
 			}
 		}
 		e->dirty = true;
+		e->file->modified = true;
 	}
 	else if (id == EDITOR_PACKET_BACKSPACE) {
 		vec2 pos;
@@ -229,6 +238,7 @@ void editor_process_packet(editor* e, const char id, const char* packet) {
 			}
 		}
 		e->dirty = true;
+		e->file->modified = true;
 	}
 }
 

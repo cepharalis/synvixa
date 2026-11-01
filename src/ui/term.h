@@ -52,6 +52,8 @@ void term_clear(unsigned int colour);
 
 unsigned int term_char_to_str(char* b, unsigned char c);
 
+void term_clear_line(uint32_t line);
+
 void term_write(const char* s);
 
 void term_write_s(const char* s, unsigned int style);
