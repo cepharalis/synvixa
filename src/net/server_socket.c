@@ -16,6 +16,8 @@ server_socket server_socket_open(const int port) {
 	if (fcntl(s.socket, F_SETFL, flags | O_NONBLOCK) < 0) {
 		return s;
 	}
+	constexpr int opt = 1;
+	setsockopt(s.socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 	struct sockaddr_in addr;
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = INADDR_ANY;

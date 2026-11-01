@@ -31,9 +31,17 @@ net_socket socket_open(const char* ip, const int port) {
 			FD_ZERO(&set);
 			FD_SET(s.socket, &set);
 			struct timeval time;
-			time.tv_sec = 1;
+			time.tv_sec = 5;
 			time.tv_usec = 0;
 			if (select(s.socket + 1, nullptr, &set, nullptr, &time) < 0) {
+				perror("select");
+				return s;
+			}
+			int error = 0;
+			socklen_t len = sizeof(error);
+			getsockopt(s.socket, SOL_SOCKET, SO_ERROR, &error, &len);
+			if (error != 0) {
+				errno = error;
 				perror("select");
 				return s;
 			}
