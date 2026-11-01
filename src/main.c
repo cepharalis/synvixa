@@ -14,6 +14,7 @@
 #include "util/string_util.h"
 
 #define PACKET_DISCONNECT 0
+#define PORT 8888
 
 static volatile sig_atomic_t running = 1;
 
@@ -42,7 +43,7 @@ int main(const int argc, char** argv) {
 	int client_count = 0;
 	char buffer[1024] = {};
 	if (client) {
-		client_socket = socket_open(argv[2], 8888);
+		client_socket = socket_open(argv[2], PORT);
 		if (!client_socket.open) {
 			printf("Failed to connect to server\n");
 			return 1;
@@ -61,7 +62,7 @@ int main(const int argc, char** argv) {
 		f = file_receive(&client_socket);
 	}
 	else {
-		server_socket = server_socket_open(8888);
+		server_socket = server_socket_open(PORT);
 		f = file_read(argv[1]);
 		if (f.lines.size == 0) {
 			char_vector line;
