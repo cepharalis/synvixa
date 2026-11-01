@@ -42,6 +42,13 @@ typedef struct vec2 {
 	uint32_t y;
 } vec2;
 
+typedef struct term_char {
+	char c;
+	unsigned char colour;
+	unsigned char background;
+	unsigned char style;
+} term_char;
+
 int term_init();
 
 vec2 term_get_size();
@@ -77,6 +84,10 @@ void term_write_ls(const char* s, unsigned int length, unsigned int style);
 void term_write_lcs(const char* s, unsigned int length, unsigned int colour, unsigned int style);
 
 void term_write_lcbs(const char* s, unsigned int length, unsigned int colour, unsigned int background, unsigned int style);
+
+void term_write_char(term_char c);
+
+term_char term_read_buffer();
 
 int term_read();
 
