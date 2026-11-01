@@ -34,6 +34,8 @@
 #define TERM_END 261
 #define TERM_BACKSPACE 262
 #define TERM_DELETE 263
+#define TERM_PAGE_UP 264
+#define TERM_PAGE_DOWN 265
 
 typedef struct vec2 {
 	uint32_t x;
