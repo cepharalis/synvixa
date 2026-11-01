@@ -1,21 +1,9 @@
 #pragma once
 
-#include <stddef.h>
-
-#if defined(__linux__) || defined(__APPLE__)
-#include <regex.h>
-#elifndef _WIN32
-#error Unsupported platform
-#endif
+#include "pcre2posix.h"
 
 typedef struct regex {
-#if defined(__linux__) || defined(__APPLE__)
 	regex_t regex;
-#elifdef _WIN32
-	const char* pattern;
-#else
-#error Unsupported platform
-#endif
 } regex;
 
 typedef struct regex_match {

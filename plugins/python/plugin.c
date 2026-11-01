@@ -10,10 +10,10 @@ void load_plugin(plugin* p) {
 	token_type_vector_push(&python.token_types, token_type_new("comment", /*language=RegExp*/ "(#.*)", TOKEN_COMMENT));
 	token_type_vector_push(&python.token_types, token_type_new("header-name", /*language=RegExp*/ "(from|import).*", TOKEN_STRING));
 	token_type_vector_push(&python.token_types, token_type_new("string-literal", /*language=RegExp*/ "[rfb]?(\"\"\"[\\s\\S]*?\"\"\"|'''[\\s\\S]*?'''|\".*?\"|'.*?')", TOKEN_STRING));
-	token_type_vector_push(&python.token_types, token_type_new("keyword", /*language=RegExp*/ "\\b(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)\\b", TOKEN_KEYWORD));
+	token_type_vector_push(&python.token_types, token_type_new("keyword", /*language=RegExp*/ "(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)\\b", TOKEN_KEYWORD));
 	token_type_vector_push(&python.token_types, token_type_new("identifier", /*language=RegExp*/ "[a-zA-Z_][a-zA-Z0-9_]*", TOKEN_NORMAL));
-	token_type_vector_push(&python.token_types, token_type_new("constant", /*language=RegExp*/ "\\b[0-9]+(\\.[0-9]+)?\\b", TOKEN_CONSTANT));
-	token_type_vector_push(&python.token_types, token_type_new("punctuator", /*language=RegExp*/ "[\\+\\-\\*/%&=><!~^&|\\(\\)\\[\\]\\{\\}:;,\\.]", TOKEN_NORMAL));
+	token_type_vector_push(&python.token_types, token_type_new("constant", /*language=RegExp*/ "[0-9]+(\\.[0-9]+)?\\b", TOKEN_CONSTANT));
+	token_type_vector_push(&python.token_types, token_type_new("punctuator", /*language=RegExp*/ "[+\\-*/%&=><!~^|()\\[\\]{}:;,.]", TOKEN_NORMAL));
 	language_vector_push(&p->languages, python);
 }
 
