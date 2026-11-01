@@ -13,7 +13,7 @@ add_executable(synvixa ${SRC_FILE})
 
 target_include_directories(synvixa PUBLIC src)
 
-target_link_libraries(synvixa PRIVATE pcre2-posix)
+target_link_libraries(synvixa PUBLIC pcre2-posix-static)
 
 set_target_properties(synvixa PROPERTIES ENABLE_EXPORTS TRUE)
 

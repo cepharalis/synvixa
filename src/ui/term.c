@@ -1,6 +1,5 @@
 #include "term.h"
 
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,6 +11,7 @@ static vec2 cursor;
 
 #if defined(__linux__) || defined(__APPLE__)
 #include <fcntl.h>
+#include <signal.h>
 #include <sys/ioctl.h>
 #include <termios.h>
 
@@ -21,10 +21,14 @@ static vec2 get_term_size() {
 	if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &term_size) == 0) {
 		s.x = term_size.ws_col;
 		s.y = term_size.ws_row;
-		free(buffer);
-		buffer = malloc(s.x * s.y * sizeof(term_char));
 	}
 	return s;
+}
+
+static void resize_handler(int) {
+	size = get_term_size();
+	free(buffer);
+	buffer = malloc(size.x * size.y * sizeof(term_char));
 }
 #elifdef _WIN32
 #include <conio.h>
@@ -53,10 +57,6 @@ static vec2 get_term_size() {
 #else
 #error Unsupported platform
 #endif
-
-static void resize_handler(int) {
-	size = get_term_size();
-}
 
 int term_init() {
 #ifdef _WIN32
@@ -290,9 +290,9 @@ int term_read() {
 				return TERM_END;
 			case 83:
 				return TERM_DELETE;
-			case 81:
-				return TERM_PAGE_UP;
 			case 73:
+				return TERM_PAGE_UP;
+			case 81:
 				return TERM_PAGE_DOWN;
 			default:
 				return TERM_EOF;
@@ -375,6 +375,14 @@ void term_render() {
 			offset += written;
 		}
 	}
+#ifdef _WIN32
+	const vec2 new_size = get_term_size();
+	if (new_size.x != size.x || new_size.y != size.y) {
+		size = new_size;
+		free(buffer);
+		buffer = malloc(size.x * size.y * sizeof(term_char));
+	}
+#endif
 }
 
 void term_destroy() {
