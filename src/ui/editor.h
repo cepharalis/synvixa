@@ -48,4 +48,4 @@ void editor_process_packet(editor* e, char id, const char* packet);
 
 void editor_render(editor* e, vec2 pos, vec2 size);
 
-void editor_close(const editor* e, const net_socket* sockets, const int socket_count);
+void editor_close(const editor* e, const net_socket* sockets, int socket_count);

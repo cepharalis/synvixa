@@ -1,7 +1,6 @@
 #pragma once
 
 #include "term.h"
-#include "file/file.h"
 
 #define EXPLORER_NORMAL TERM_WHITE
 #define EXPLORER_DIR (TERM_BLUE | TERM_BRIGHT)
@@ -26,7 +25,7 @@ typedef struct explorer {
 	int found;
 } explorer;
 
-explorer explorer_new(void);
+explorer explorer_new();
 
 bool explorer_update(explorer *e, int c);
 

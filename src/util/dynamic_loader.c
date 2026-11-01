@@ -50,11 +50,11 @@ dynamic_loader_handle dynamic_loader_load(const char* path) {
 	return LoadLibrary(TEXT(path));
 }
 
-void* dynamic_loader_get_symbol(dynamic_loader_handle library, const char* symbol) {
+void* dynamic_loader_get_symbol(const dynamic_loader_handle library, const char* symbol) {
 	return GetProcAddress(library, symbol);
 }
 
-void dynamic_loader_unload(dynamic_loader_handle library) {
+void dynamic_loader_unload(const dynamic_loader_handle library) {
 	FreeLibrary(library);
 }
 #else

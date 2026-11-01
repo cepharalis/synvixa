@@ -5,7 +5,11 @@
 #include <dirent.h>
 #include <unistd.h>
 
-explorer explorer_new(void) {
+static int explorer_item_cmp(const void* a, const void* b) {
+	return strcmp(((const explorer_item*) a)->name, ((const explorer_item*) b)->name);
+}
+
+explorer explorer_new() {
     explorer e;
     e.selected = 0;
     e.top_idx = 0;
@@ -18,7 +22,7 @@ explorer explorer_new(void) {
         strcpy(e.cwd, ".");
     }
 
-    DIR *dir = opendir(".");
+    DIR* dir = opendir(".");
     if (dir) {
         struct dirent *entry;
         while ((entry = readdir(dir)) != NULL && e.item_count < MAX_ITEMS) {
@@ -34,6 +38,8 @@ explorer explorer_new(void) {
             e.item_count++;
         }
         closedir(dir);
+
+    	qsort(e.items, e.item_count, sizeof(explorer_item), explorer_item_cmp);
     }
 
     return e;
@@ -61,6 +67,8 @@ static void explorer_refresh_dir(explorer *e) {
     }
     closedir(dir);
 
+	qsort(e->items, e->item_count, sizeof(explorer_item), explorer_item_cmp);
+
     if (e->selected >= e->item_count) {
         e->selected = e->item_count > 0 ? e->item_count - 1 : 0;
     }
@@ -68,7 +76,7 @@ static void explorer_refresh_dir(explorer *e) {
     e->dirty = true;
 }
 
-bool explorer_update(explorer *e, int c) {
+bool explorer_update(explorer *e, const int c) {
     bool dirty = false;
 
     if (c == TERM_DOWN_ARROW || c == 'j') {
@@ -110,22 +118,22 @@ bool explorer_update(explorer *e, int c) {
     return dirty;
 }
 
-void explorer_render(explorer *e, vec2 pos, vec2 size) {
+void explorer_render(explorer *e, const vec2 pos, const vec2 size) {
     term_set_cursor((vec2){.x = pos.x, .y = pos.y});
     term_write_c(" explorer ", TERM_WHITE | TERM_BRIGHT);
 
     term_set_cursor((vec2){.x = pos.x, .y = pos.y + 1});
     term_write_lc(e->cwd, strlen(e->cwd), TERM_WHITE);
 
-    int display_limit = size.y - 3;
+    const int display_limit = (int) size.y - 3;
     if (e->selected < e->top_idx) e->top_idx = e->selected;
     if (e->selected >= e->top_idx + display_limit) e->top_idx = e->selected - display_limit + 1;
 
     for (unsigned int i = 0; i < (unsigned int)display_limit && i < (unsigned int)e->item_count; i++) {
-        unsigned int idx = e->top_idx + i;
+        const unsigned int idx = e->top_idx + i;
         term_set_cursor((vec2){.x = pos.x, .y = pos.y + 2 + i});
 
-        unsigned int colour = e->items[idx].is_dir ? EXPLORER_DIR : EXPLORER_FILE;
+        const unsigned int colour = e->items[idx].is_dir ? EXPLORER_DIR : EXPLORER_FILE;
 
         if (idx == e->selected) {
             term_write_cs(">", colour, TERM_UNDERLINE);

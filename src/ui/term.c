@@ -46,7 +46,7 @@ static vec2 get_term_size() {
 			if (b[i] == 't') {
 				b[i + 1] = '\0';
 				vec2 s;
-				sscanf(b, "\x1b[8;%d;%dt", &s.x, &s.y);
+				sscanf(b, "\x1b[8;%d;%dt", &s.x, &s.y); // NOLINT(*-err34-c)
 				return s;
 			}
 		}
@@ -60,6 +60,7 @@ static vec2 get_term_size() {
 
 int term_init() {
 #ifdef _WIN32
+	// ReSharper disable once CppLocalVariableMayBeConst
 	HANDLE outputHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 	DWORD outputMode;
 	GetConsoleMode(outputHandle, &outputMode);
@@ -76,6 +77,7 @@ int term_init() {
 	fcntl(STDIN_FILENO, F_SETFL, fcntl(STDIN_FILENO, F_GETFL, 0) | O_NONBLOCK);
 	signal(SIGWINCH, resize_handler);
 #elifdef _WIN32
+	// ReSharper disable once CppLocalVariableMayBeConst
 	HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
 	DWORD mode;
 	GetConsoleMode(h, &mode);
