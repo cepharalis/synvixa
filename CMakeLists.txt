@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 4.3.1)
 
 project(synvixa)
 
-
 set(CMAKE_C_STANDARD 23)
 
 file(GLOB_RECURSE SRC_FILE CONFIGURE_DEPENDS src/*.c)
