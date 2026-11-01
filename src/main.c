@@ -120,6 +120,7 @@ int main(const int argc, char** argv) {
 				char id;
 				while ((read = socket_read(&clients[i], &id, 1)) > 0) {
 					if (id == PACKET_DISCONNECT) {
+						socket_close(&clients[i]);
 						clients[i--] = clients[--client_count];
 						break;
 					}
@@ -149,6 +150,10 @@ int main(const int argc, char** argv) {
 			int read;
 			char id;
 			while ((read = socket_read(&client_socket, &id, 1)) > 0) {
+				if (id == PACKET_DISCONNECT) {
+					socket_close(&client_socket);
+					goto stop;
+				}
 				uint32_t length;
 				read = 0;
 				while ((read = socket_read(&client_socket, &length + read, 4 - read)) < 4) {}
@@ -164,19 +169,27 @@ int main(const int argc, char** argv) {
 		}
 		usleep(50000);
 	}
+stop:
+	term_destroy();
 	if (client) {
-		char id = PACKET_DISCONNECT;
-		socket_write(&client_socket, &id, 1);
-		socket_close(&client_socket);
+		if (client_socket.open) {
+			char id = PACKET_DISCONNECT;
+			socket_write(&client_socket, &id, 1);
+			socket_close(&client_socket);
+		}
+		else {
+			printf("Server disconnected\n");
+		}
 	}
 	else {
+		char id = PACKET_DISCONNECT;
 		for (int i = 0; i < client_count; i++) {
+			socket_write(&clients[i], &id, 1);
 			socket_close(&clients[i]);
 		}
 		server_socket_close(&server_socket);
 	}
 	file_write(&f);
-	term_destroy();
 	plugins_unload();
 	return 0;
 }
