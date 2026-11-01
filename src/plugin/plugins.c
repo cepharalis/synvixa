@@ -5,7 +5,7 @@
 
 #if defined(__linux__) || defined(__APPLE__)
 #include <dirent.h>
-#elifdef __WIN32
+#elifdef _WIN32
 #include <windows.h>
 #else
 #error Unsupported platform
@@ -53,7 +53,7 @@ int plugins_load() {
 			load_plugin(name);
 		}
 	}
-#elifdef __WIN32
+#elifdef _WIN32
 	WIN32_FIND_DATAW find_data;
 	// ReSharper disable once CppLocalVariableMayBeConst
 	HANDLE h = FindFirstFileW(L"plugins\\*", &find_data);

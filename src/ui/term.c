@@ -26,15 +26,29 @@ static vec2 get_term_size() {
 	}
 	return s;
 }
-#elifdef __WIN32
+#elifdef _WIN32
+#include <conio.h>
 #include <windows.h>
 
 static vec2 get_term_size() {
 	CONSOLE_SCREEN_BUFFER_INFO buffer_info;
 	if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &buffer_info) == 0) {
+		write(STDOUT_FILENO, "\x1b[18t", sizeof("\x1b[18t") - 1);
+		char b[32];
+		for (int i = 0; i < 32; i++) {
+			int c;
+			while ((c = getchar()) == EOF) {}
+			b[i] = (char) c;
+			if (b[i] == 't') {
+				b[i + 1] = '\0';
+				vec2 s;
+				sscanf(b, "\x1b[8;%d;%dt", &s.x, &s.y);
+				return s;
+			}
+		}
 		return (vec2){.x = 0, .y = 0};
 	}
-	return (vec2){.x = buffer_info.dwSize.X, .y = buffer_info.dwSize.Y};
+	return (vec2){.x = buffer_info.srWindow.Right - buffer_info.srWindow.Left + 1, .y = buffer_info.srWindow.Bottom - buffer_info.srWindow.Top + 1};
 }
 #else
 #error Unsupported platform
@@ -45,6 +59,12 @@ static void resize_handler(int) {
 }
 
 int term_init() {
+#ifdef _WIN32
+	HANDLE outputHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+	DWORD outputMode;
+	GetConsoleMode(outputHandle, &outputMode);
+	SetConsoleMode(outputHandle, outputMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+#endif
 	size = get_term_size();
 	buffer = malloc(size.x * size.y * sizeof(term_char));
 	write(STDOUT_FILENO, ANSI_ENABLE_BUFFER "\x1b[?1007l\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l\x1b[?25l", sizeof(ANSI_ENABLE_BUFFER) + sizeof("\x1b[?1007l\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l\x1b[?25l") - 2);
@@ -55,7 +75,7 @@ int term_init() {
 	tcsetattr(STDIN_FILENO, TCSANOW, &t);
 	fcntl(STDIN_FILENO, F_SETFL, fcntl(STDIN_FILENO, F_GETFL, 0) | O_NONBLOCK);
 	signal(SIGWINCH, resize_handler);
-#elifdef __WIN32
+#elifdef _WIN32
 	HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
 	DWORD mode;
 	GetConsoleMode(h, &mode);
@@ -196,6 +216,7 @@ term_char term_read_buffer() {
 }
 
 int term_read() {
+#if defined(__linux__) || defined(__APPLE__)
 	int c = getchar();
 	if (c == EOF) {
 		return TERM_EOF;
@@ -247,6 +268,46 @@ int term_read() {
 		default:
 			return TERM_EOF;
 	}
+#elifdef _WIN32
+	if (!_kbhit()) {
+		return TERM_EOF;
+	}
+	int c = _getch();
+	if (c == 0 || c == 224) {
+		c = _getch();
+		switch (c) {
+			case 72:
+				return TERM_UP_ARROW;
+			case 80:
+				return TERM_DOWN_ARROW;
+			case 77:
+				return TERM_RIGHT_ARROW;
+			case 75:
+				return TERM_LEFT_ARROW;
+			case 71:
+				return TERM_HOME;
+			case 79:
+				return TERM_END;
+			case 83:
+				return TERM_DELETE;
+			case 81:
+				return TERM_PAGE_UP;
+			case 73:
+				return TERM_PAGE_DOWN;
+			default:
+				return TERM_EOF;
+		}
+	}
+	if (c == 8) {
+		return TERM_BACKSPACE;
+	}
+	if (c == 13) {
+		return '\n';
+	}
+	return c;
+#else
+#error Unsupported platform
+#endif
 }
 
 void term_render() {

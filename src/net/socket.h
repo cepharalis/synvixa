@@ -1,9 +1,21 @@
 #pragma once
 
+#ifdef _WIN32
+#include <winsock2.h>
+#endif
+
 typedef struct net_socket {
 	bool open;
+#if defined(__linux__) || defined(__APPLE__)
 	int socket;
+#elifdef _WIN32
+	SOCKET socket;
+#else
+#error Unsupported platform
+#endif
 } net_socket;
+
+bool socket_init();
 
 net_socket socket_open(const char* ip, int port);
 

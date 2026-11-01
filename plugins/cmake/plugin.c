@@ -8,12 +8,12 @@ void load_plugin(plugin* p) {
 	cmake.extensions[1] = ".cmake";
 	cmake.extension_count = 2;
 	token_type_vector_init(&cmake.token_types, 0);
-	token_type_vector_push(&cmake.token_types, token_type_new("comment", /*language=RegExp*/ "#(\\[\\[.*]])", COMMENT));
-	token_type_vector_push(&cmake.token_types, token_type_new("line_comment", /*language=RegExp*/ "#.*", COMMENT));
-	token_type_vector_push(&cmake.token_types, token_type_new("command", /*language=RegExp*/ "[a-z_]+\\(", NORMAL));
-	token_type_vector_push(&cmake.token_types, token_type_new("command_end", /*language=RegExp*/ "\\)", NORMAL));
-	token_type_vector_push(&cmake.token_types, token_type_new("string", /*language=RegExp*/ "\".*\"", STRING));
-	token_type_vector_push(&cmake.token_types, token_type_new("identifier", /*language=RegExp*/ "[^ )]+", KEYWORD));
+	token_type_vector_push(&cmake.token_types, token_type_new("comment", /*language=RegExp*/ "#(\\[\\[.*]])", TOKEN_COMMENT));
+	token_type_vector_push(&cmake.token_types, token_type_new("line_comment", /*language=RegExp*/ "#.*", TOKEN_COMMENT));
+	token_type_vector_push(&cmake.token_types, token_type_new("command", /*language=RegExp*/ "[a-z_]+\\(", TOKEN_NORMAL));
+	token_type_vector_push(&cmake.token_types, token_type_new("command_end", /*language=RegExp*/ "\\)", TOKEN_NORMAL));
+	token_type_vector_push(&cmake.token_types, token_type_new("string", /*language=RegExp*/ "\".*\"", TOKEN_STRING));
+	token_type_vector_push(&cmake.token_types, token_type_new("identifier", /*language=RegExp*/ "[^ )]+", TOKEN_KEYWORD));
 	language_vector_push(&p->languages, cmake);
 }
 

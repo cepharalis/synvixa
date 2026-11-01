@@ -1,22 +1,21 @@
 #pragma once
 
-#include <regex.h>
-
+#include "util/regex.h"
 #include "util/vector.h"
 
 typedef enum token_group {
-	NORMAL,
-	KEYWORD,
-	STRING,
-	COMMENT,
-	CONSTANT,
-	PREPROCESSOR,
-	ERROR
+	TOKEN_NORMAL,
+	TOKEN_KEYWORD,
+	TOKEN_STRING,
+	TOKEN_COMMENT,
+	TOKEN_CONSTANT,
+	TOKEN_PREPROCESSOR,
+	TOKEN_ERROR
 } token_group;
 
 typedef struct token_type {
 	char* name;
-	regex_t pattern;
+	regex pattern;
 	token_group group;
 } token_type;
 

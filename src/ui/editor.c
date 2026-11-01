@@ -357,22 +357,22 @@ void editor_render(editor* e, const vec2 pos, const vec2 size) {
 					}
 					const token_group group = e->file->language->token_types.data[tokens->data[token].type].group;
 					switch (group) {
-						case KEYWORD:
+						case TOKEN_KEYWORD:
 							colour = EDITOR_KEYWORD;
 							break;
-						case STRING:
+						case TOKEN_STRING:
 							colour = EDITOR_STRING;
 							break;
-						case COMMENT:
+						case TOKEN_COMMENT:
 							colour = EDITOR_COMMENT;
 							break;
-						case CONSTANT:
+						case TOKEN_CONSTANT:
 							colour = EDITOR_CONSTANT;
 							break;
-						case PREPROCESSOR:
+						case TOKEN_PREPROCESSOR:
 							colour = EDITOR_PREPROCESSOR;
 							break;
-						case ERROR:
+						case TOKEN_ERROR:
 							colour = EDITOR_ERROR;
 							break;
 						default:

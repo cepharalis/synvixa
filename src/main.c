@@ -14,7 +14,7 @@
 #include "util/string_util.h"
 
 #define PACKET_DISCONNECT 0
-#define PORT 8888
+#define PORT 25565
 
 static volatile sig_atomic_t running = 1;
 
@@ -31,7 +31,9 @@ int main(const int argc, char** argv) {
 		return 1;
 	}
 	signal(SIGINT, handle_sigint);
+#if defined(__linux__) || defined(__APPLE__)
 	signal(SIGPIPE, SIG_IGN);
+#endif
 	plugins_load();
 	file f;
 	net_socket client_socket = {};
