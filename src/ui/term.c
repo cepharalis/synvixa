@@ -6,14 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 
-typedef struct Char {
-	char c;
-	unsigned char colour;
-	unsigned char background;
-	unsigned char style;
-} Char;
-
-static Char* buffer;
+static term_char* buffer;
 static vec2 size;
 static vec2 cursor;
 
@@ -29,7 +22,7 @@ static vec2 get_term_size() {
 		s.x = term_size.ws_col;
 		s.y = term_size.ws_row;
 		free(buffer);
-		buffer = malloc(s.x * s.y * sizeof(Char));
+		buffer = malloc(s.x * s.y * sizeof(term_char));
 	}
 	return s;
 }
@@ -53,7 +46,7 @@ static void resize_handler(int) {
 
 int term_init() {
 	size = get_term_size();
-	buffer = malloc(size.x * size.y * sizeof(Char));
+	buffer = malloc(size.x * size.y * sizeof(term_char));
 	write(STDOUT_FILENO, ANSI_ENABLE_BUFFER "\x1b[?1007l\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l\x1b[?25l", sizeof(ANSI_ENABLE_BUFFER) + sizeof("\x1b[?1007l\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l\x1b[?25l") - 2);
 #if defined(__linux__) || defined(__APPLE__)
 	struct termios t;
@@ -170,6 +163,13 @@ void term_write_lcbs(const char* s, const unsigned int length, const unsigned in
 			cursor.x = startX;
 		}
 		else if (c == '\t') {
+			const unsigned int index = cursor.x + cursor.y * size.x;
+			for (int j = 0; j < 4; j++) {
+				buffer[index + j].c = ' ';
+				buffer[index + j].colour = colour;
+				buffer[index + j].background = background;
+				buffer[index + j].style = style;
+			}
 			cursor.x += 4;
 		}
 		else {
@@ -184,6 +184,15 @@ void term_write_lcbs(const char* s, const unsigned int length, const unsigned in
 			cursor.x++;
 		}
 	}
+}
+
+void term_write_char(const term_char c) {
+	buffer[cursor.x + cursor.y * size.x] = c;
+	cursor.x++;
+}
+
+term_char term_read_buffer() {
+	return buffer[cursor.x + cursor.y * size.x];
 }
 
 int term_read() {

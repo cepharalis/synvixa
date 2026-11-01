@@ -36,6 +36,9 @@ int main(const int argc, char** argv) {
 	net_socket client_socket = {};
 	server_socket server_socket = {};
 	net_socket clients[16] = {};
+	for (int i = 0; i < 16; i++) {
+		clients[i].open = false;
+	}
 	int client_count = 0;
 	char buffer[1024] = {};
 	if (client) {
@@ -50,7 +53,8 @@ int main(const int argc, char** argv) {
 			printf("Server sent invalid header");
 			return 1;
 		}
-		if (buffer[8] != 0) {
+		client_count = buffer[8]; // NOLINT(*-str34-c)
+		if (client_count == -1) {
 			printf("Server busy, only 16 clients are supported");
 			return 1;
 		}
@@ -89,7 +93,7 @@ int main(const int argc, char** argv) {
 			render |= editor_update(&e, &client_socket, 1);
 		}
 		else {
-			render |= editor_update(&e, clients, client_count);
+			render |= editor_update(&e, clients, 16);
 		}
 		const vec2 newSize = term_get_size();
 		if (termSize.x != newSize.x || termSize.y != newSize.y) {
@@ -106,22 +110,33 @@ int main(const int argc, char** argv) {
 			net_socket c;
 			while ((c = server_socket_accept(&server_socket)).open) {
 				socket_write(&c, HEADER, 8);
-				if (client_count == 16) {
-					socket_write(&c, "\1", 1);
+				int index = -1;
+				for (int i = 0; i < 16; i++) {
+					if (!clients[i].open) {
+						clients[i] = c;
+						index = i;
+						break;
+					}
+				}
+				if (index == -1) {
+					char d = -1;
+					socket_write(&c, &d, 1);
 				}
 				else {
-					socket_write(&c, "\0", 1);
-					clients[client_count++] = c;
+					char d = (char) index;
+					socket_write(&c, &d, 1);
 					file_send(&f, &c);
 				}
 			}
-			for (int i = 0; i < client_count; i++) {
+			for (int i = 0; i < 16; i++) {
+				if (!clients[i].open) {
+					continue;
+				}
 				int read;
 				char id;
 				while ((read = socket_read(&clients[i], &id, 1)) > 0) {
 					if (id == PACKET_DISCONNECT) {
 						socket_close(&clients[i]);
-						clients[i--] = clients[--client_count];
 						break;
 					}
 					uint32_t length;
@@ -130,8 +145,8 @@ int main(const int argc, char** argv) {
 					char* packet = malloc(length);
 					read = 0;
 					while ((read = socket_read(&clients[i], packet + read, (int) length - read)) < length) {}
-					for (int j = 0; j < client_count; j++) {
-						if (i == j) {
+					for (int j = 0; j < 16; j++) {
+						if (i == j || !clients[j].open) {
 							continue;
 						}
 						socket_write(&clients[j], &id, 1);
@@ -183,16 +198,18 @@ stop:
 	}
 	else {
 		char id = PACKET_DISCONNECT;
-		for (int i = 0; i < client_count; i++) {
-			socket_write(&clients[i], &id, 1);
-			socket_close(&clients[i]);
+		for (int i = 0; i < 16; i++) {
+			if (clients[i].open) {
+				socket_write(&clients[i], &id, 1);
+				socket_close(&clients[i]);
+			}
 		}
 		server_socket_close(&server_socket);
 		if (f.modified) {
 			vec2 size = term_get_size();
 			term_clear_line(size.y - 1);
 			term_set_cursor((vec2){.x = 0, .y = size.y - 1});
-			term_write("Save modifications [Y/n]?");
+			term_write_s("Save modifications [Y/n]?", TERM_BOLD);
 			term_render();
 			int c;
 			while ((c = term_read()) == -1) {}

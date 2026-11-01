@@ -298,11 +298,11 @@ void editor_render(editor* e, const vec2 pos, const vec2 size) {
 			while (token < tokens->size && tokens->data[token].line < line_number) {
 				token++;
 			}
-			unsigned int colour = EDITOR_NORMAL;
 			const char_vector* l = &e->file->lines.data[line_number];
 			unsigned int line_pos = e->scroll.x;
 			int length = (int) l->size - line_pos; // NOLINT(*-narrowing-conversions)
 			if (length > 0) {
+				unsigned int colour = EDITOR_NORMAL;
 				unsigned int visual_length = 0;
 				unsigned int visible_length = 0;
 				for (unsigned int i = 0; i < length; i++) {
@@ -370,19 +370,10 @@ void editor_render(editor* e, const vec2 pos, const vec2 size) {
 					}
 				}
 				term_set_cursor((vec2){.x = pos.x + e->cursor.x - e->scroll.x + cursor_offset, .y = pos.y + y});
-				if (e->cursor.x < l->size) {
-					const char* cursor_text = l->data + e->cursor.x;
-					if (cursor_text[0] == '\t') {
-						term_write_cs(" ", colour, TERM_UNDERLINE);
-						term_write("   ");
-					}
-					else {
-						term_write_lcs(cursor_text, 1, colour, TERM_UNDERLINE);
-					}
-				}
-				else {
-					term_write_cs(" ", colour, TERM_UNDERLINE);
-				}
+				term_char c = term_read_buffer();
+				c.colour = TERM_WHITE;
+				c.style |= TERM_UNDERLINE;
+				term_write_char(c);
 			}
 		}
 		else {
