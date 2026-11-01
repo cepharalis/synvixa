@@ -405,14 +405,18 @@ void editor_render(editor* e, const vec2 pos, const vec2 size) {
 		if (i != 16 && !e->activeCursors[i]) {
 			continue;
 		}
-		const vec2 cursor = i == 16 ? e->cursor : e->otherCursors[i];
-		unsigned int cursor_offset = 0;
+		vec2 cursor = i == 16 ? e->cursor : e->otherCursors[i];
 		for (unsigned int j = 0; j < cursor.x; j++) {
 			if (e->file->lines.data[cursor.y].data[j] == '\t') {
-				cursor_offset += 3;
+				cursor.x += 3;
 			}
 		}
-		term_set_cursor((vec2){.x = pos.x + cursor.x - e->scroll.x + cursor_offset, .y = pos.y + cursor.y});
+		cursor.x += pos.x - e->scroll.x;
+		cursor.y += pos.y - e->scroll.y;
+		if (cursor.x < 0 || cursor.y < 0 || cursor.x >= size.x || cursor.y >= size.y) {
+			continue;
+		}
+		term_set_cursor((vec2){.x = cursor.x, .y = cursor.y});
 		term_char c = term_read_buffer();
 		c.colour = CURSOR_COLOURS[i];
 		c.style |= TERM_UNDERLINE;
