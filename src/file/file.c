@@ -8,6 +8,7 @@ file file_read(char* path) {
 	char_vector_vector_init(&f.lines, 0);
     f.path = path;
 	f.language = nullptr;
+	f.modified = false;
     FILE* fp = fopen(path, "r");
     if (fp == nullptr) {
 		return f;
@@ -77,6 +78,7 @@ file file_receive(const net_socket* s) {
 	file f;
 	f.path = path;
 	f.language = nullptr;
+	f.modified = false;
 	char_vector_vector_init(&f.lines, lines);
 	for (uint32_t line = 0; line < lines; line++) {
 		uint32_t length = 0;

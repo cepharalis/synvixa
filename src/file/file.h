@@ -10,6 +10,7 @@ typedef struct file {
 	char* path;
 	char_vector_vector lines;
 	language* language;
+	bool modified;
 } file;
 
 file file_read(char* path);

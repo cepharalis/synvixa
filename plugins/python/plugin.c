@@ -1,6 +1,6 @@
 #include "plugin.h"
 
-void load_plugin(plugin p) {
+void load_plugin(plugin* p) {
 	language python;
 	python.name = "Python";
 	python.extensions = malloc(sizeof(char*));
@@ -17,7 +17,7 @@ void load_plugin(plugin p) {
 	language_vector_push(&p->languages, python);
 }
 
-void unload_plugin(const plugin p) {
+void unload_plugin(const plugin* p) {
 	free(p->languages.data[0].extensions);
 	token_type_vector_free(&p->languages.data[0].token_types);
 }
