@@ -24,6 +24,7 @@ typedef struct editor {
 	vec2 cursor;
 	vec2 scroll;
 	bool dirty;
+	int movePages;
 } editor;
 
 editor editor_new(file* f);

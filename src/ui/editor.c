@@ -7,6 +7,7 @@ editor editor_new(file* f) {
 	e.scroll = (vec2){.x = 0, .y = 0};
 	token_vector_init(&e.tokens, 0);
 	e.dirty = true;
+	e.movePages = 0;
 	return e;
 }
 
@@ -107,6 +108,12 @@ bool editor_update(editor* e, const net_socket* sockets, const int socket_count)
 			else if (c == TERM_END) {
 				e->cursor.x = l->size;
 			}
+			else if (c == TERM_PAGE_UP) {
+				e->movePages--;
+			}
+			else if (c == TERM_PAGE_DOWN) {
+				e->movePages++;
+			}
 			else if (c == '\n') {
 				char_vector line;
 				char_vector_init(&line, 0);
@@ -131,7 +138,7 @@ bool editor_update(editor* e, const net_socket* sockets, const int socket_count)
 				e->cursor.x = 0;
 				e->file->modified = true;
 			}
-			else {
+			else if (c < 256) {
 				if (e->cursor.x == l->size) {
 					char_vector_push(l, (char) c);
 				}
@@ -253,6 +260,23 @@ void editor_render(editor* e, const vec2 pos, const vec2 size) {
 		}
 		e->dirty = false;
 	}
+	if (e->movePages < 0) {
+		if (e->cursor.y < -e->movePages * size.y) {
+			e->cursor.y = 0;
+		}
+		else {
+			e->cursor.y += e->movePages * size.y;
+		}
+	}
+	else if (e->movePages > 0) {
+		if (e->file->lines.size - e->cursor.y < e->movePages * size.y) {
+			e->cursor.y = e->file->lines.size - 1;
+		}
+		else {
+			e->cursor.y += e->movePages * size.y;
+		}
+	}
+	e->movePages = 0;
 	if (e->cursor.x >= size.x + e->scroll.x) {
 		e->scroll.x = e->cursor.x - size.x + 1;
 	}

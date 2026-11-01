@@ -223,6 +223,18 @@ int term_read() {
 				return TERM_DELETE;
 			}
 			return TERM_EOF;
+		case '5':
+			c = getchar();
+			if (c == '~') {
+				return TERM_PAGE_UP;
+			}
+			return TERM_EOF;
+		case '6':
+			c = getchar();
+			if (c == '~') {
+				return TERM_PAGE_DOWN;
+			}
+			return TERM_EOF;
 		default:
 			return TERM_EOF;
 	}
