@@ -6,7 +6,6 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <asm-generic/errno.h>
 #include <sys/socket.h>
 
 net_socket socket_open(const char* ip, const int port) {
