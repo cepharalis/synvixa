@@ -269,9 +269,17 @@ void editor_render(editor* e, const vec2 pos, const vec2 size) {
 			unsigned int line_pos = e->scroll.x;
 			int length = (int) l->size - line_pos; // NOLINT(*-narrowing-conversions)
 			if (length > 0) {
-				if (length > size.x) {
-					length = (int) size.x;
+				unsigned int visual_length = 0;
+				unsigned int visible_length = 0;
+				for (unsigned int i = 0; i < length; i++) {
+					const unsigned int char_length = l->data[i + line_pos] == '\t' ? 4 : 1;
+					if (visual_length + char_length > size.x) {
+						break;
+					}
+					visual_length += char_length;
+					visible_length++;
 				}
+				length = (int) visible_length;
 				while (length > 0) {
 					while (token < tokens->size && tokens->data[token].line == line_number && tokens->data[token].pos + tokens->data[token].length <= line_pos) {
 						token++;
