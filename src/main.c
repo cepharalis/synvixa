@@ -13,6 +13,8 @@
 #include "ui/term.h"
 #include "util/string_util.h"
 
+#define PACKET_DISCONNECT 0
+
 static volatile sig_atomic_t running = 1;
 
 static const char* HEADER = "SYNV0001";
@@ -117,6 +119,10 @@ int main(const int argc, char** argv) {
 				int read;
 				char id;
 				while ((read = socket_read(&clients[i], &id, 1)) > 0) {
+					if (id == PACKET_DISCONNECT) {
+						clients[i--] = clients[--client_count];
+						break;
+					}
 					uint32_t length;
 					read = 0;
 					while ((read = socket_read(&clients[i], &length + read, 4 - read)) < 4) {}
@@ -159,6 +165,8 @@ int main(const int argc, char** argv) {
 		usleep(50000);
 	}
 	if (client) {
+		char id = PACKET_DISCONNECT;
+		socket_write(&client_socket, &id, 1);
 		socket_close(&client_socket);
 	}
 	else {
