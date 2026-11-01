@@ -85,7 +85,7 @@ int main(const int argc, char** argv) {
 			}
 		}
 	}
-	editor e = editor_new(&f);
+	editor e = editor_new(&f, client ? client_count : -1);
 	bool render = true;
 	vec2 termSize = term_get_size();
 	while (running) {
@@ -126,6 +126,22 @@ int main(const int argc, char** argv) {
 					char d = (char) index;
 					socket_write(&c, &d, 1);
 					file_send(&f, &c);
+				}
+				for (int i = 0; i < 17; i++) {
+					if (i < 16 && !e.activeCursors[i]) {
+						continue;
+					}
+					vec2 pos = i == 16 ? e.cursor : e.otherCursors[i];
+					char packet[17];
+					packet[0] = EDITOR_PACKET_SET_CURSOR;
+					constexpr uint32_t length = 12;
+					memcpy(packet + 1, &length, 4);
+					memcpy(packet + 5, &pos, 8);
+					int clientID = i == 16 ? -1 : i;
+					memcpy(packet + 13, &clientID, 4);
+					for (int j = 0; j < 16; j++) {
+						socket_write(&clients[j], packet, 17);
+					}
 				}
 			}
 			for (int i = 0; i < 16; i++) {
@@ -188,6 +204,7 @@ stop:
 	if (client) {
 		term_destroy();
 		if (client_socket.open) {
+			editor_close(&e, &client_socket, 1);
 			char id = PACKET_DISCONNECT;
 			socket_write(&client_socket, &id, 1);
 			socket_close(&client_socket);

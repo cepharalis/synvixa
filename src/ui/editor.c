@@ -1,6 +1,6 @@
 #include "editor.h"
 
-editor editor_new(file* f) {
+editor editor_new(file* f, const int clientID) {
 	editor e;
 	e.file = f;
 	e.cursor = (vec2){.x = 0, .y = 0};
@@ -8,6 +8,10 @@ editor editor_new(file* f) {
 	token_vector_init(&e.tokens, 0);
 	e.dirty = true;
 	e.movePages = 0;
+	e.clientID = clientID;
+	for (int i = 0; i < 16; i++) {
+		e.otherCursors[i] = (vec2){.x = 0, .y = 0};
+	}
 	return e;
 }
 
@@ -161,6 +165,17 @@ bool editor_update(editor* e, const net_socket* sockets, const int socket_count)
 		dirty = true;
 		e->dirty = true;
 	}
+	if (e->dirty || dirty) {
+		char packet[17];
+		packet[0] = EDITOR_PACKET_SET_CURSOR;
+		constexpr uint32_t length = 12;
+		memcpy(packet + 1, &length, 4);
+		memcpy(packet + 5, &e->cursor, 8);
+		memcpy(packet + 13, &e->clientID, 4);
+		for (int i = 0; i < socket_count; i++) {
+			socket_write(&sockets[i], packet, 17);
+		}
+	}
 	return dirty;
 }
 
@@ -246,6 +261,25 @@ void editor_process_packet(editor* e, const char id, const char* packet) {
 		}
 		e->dirty = true;
 		e->file->modified = true;
+	}
+	else if (id == EDITOR_PACKET_SET_CURSOR) {
+		vec2 pos;
+		memcpy(&pos, packet, 8);
+		int clientID;
+		memcpy(&clientID, packet + 8, 4);
+		if (clientID == -1) {
+			e->otherCursors[e->clientID] = pos;
+			e->activeCursors[e->clientID] = true;
+		}
+		else {
+			e->otherCursors[clientID] = pos;
+			e->activeCursors[clientID] = true;
+		}
+	}
+	else if (id == EDITOR_PACKET_REMOVE_CURSOR) {
+		int clientID;
+		memcpy(&clientID, packet, 4);
+		e->activeCursors[clientID] = false;
 	}
 }
 
@@ -362,22 +396,39 @@ void editor_render(editor* e, const vec2 pos, const vec2 size) {
 					term_write_lc(l->data + line_pos, length, colour);
 				}
 			}
-			if (e->cursor.y == line_number) {
-				unsigned int cursor_offset = 0;
-				for (unsigned int i = 0; i < e->cursor.x; i++) {
-					if (l->data[i] == '\t') {
-						cursor_offset += 3;
-					}
-				}
-				term_set_cursor((vec2){.x = pos.x + e->cursor.x - e->scroll.x + cursor_offset, .y = pos.y + y});
-				term_char c = term_read_buffer();
-				c.colour = TERM_WHITE;
-				c.style |= TERM_UNDERLINE;
-				term_write_char(c);
-			}
 		}
 		else {
 			term_write_c("~", TERM_BLUE | TERM_BRIGHT);
+		}
+	}
+	for (int i = 0; i < 17; i++) {
+		if (i != 16 && !e->activeCursors[i]) {
+			continue;
+		}
+		const vec2 cursor = i == 16 ? e->cursor : e->otherCursors[i];
+		unsigned int cursor_offset = 0;
+		for (unsigned int j = 0; j < cursor.x; j++) {
+			if (e->file->lines.data[cursor.y].data[j] == '\t') {
+				cursor_offset += 3;
+			}
+		}
+		term_set_cursor((vec2){.x = pos.x + cursor.x - e->scroll.x + cursor_offset, .y = pos.y + cursor.y});
+		term_char c = term_read_buffer();
+		c.colour = CURSOR_COLOURS[i];
+		c.style |= TERM_UNDERLINE;
+		term_write_char(c);
+	}
+}
+
+void editor_close(const editor* e, const net_socket* sockets, const int socket_count) {
+	if (e->clientID != -1) {
+		char packet[9];
+		packet[0] = EDITOR_PACKET_REMOVE_CURSOR;
+		constexpr uint32_t length = 4;
+		memcpy(packet + 1, &length, 4);
+		memcpy(packet + 5, &e->clientID, 4);
+		for (int i = 0; i < socket_count; i++) {
+			socket_write(&sockets[i], packet, 9);
 		}
 	}
 }
