@@ -11,6 +11,13 @@
 #define EDITOR_PREPROCESSOR TERM_YELLOW
 #define EDITOR_ERROR TERM_RED
 
+#define EDITOR_PACKET_BASE 0
+#define EDITOR_PACKET_ADD_CHAR (EDITOR_PACKET_BASE + 1)
+#define EDITOR_PACKET_ADD_LINE (EDITOR_PACKET_BASE + 2)
+#define EDITOR_PACKET_REMOVE_CHAR (EDITOR_PACKET_BASE + 3)
+#define EDITOR_PACKET_BACKSPACE (EDITOR_PACKET_BASE + 4)
+#define EDITOR_PACKET_END (EDITOR_PACKET_BASE + 4)
+
 typedef struct editor {
 	file* file;
 	token_vector tokens;
@@ -21,6 +28,8 @@ typedef struct editor {
 
 editor editor_new(file* f);
 
-bool editor_update(editor* e);
+bool editor_update(editor* e, const net_socket* sockets, int socket_count);
+
+void editor_process_packet(editor* e, char id, const char* packet);
 
 void editor_render(editor* e, vec2 pos, vec2 size);
