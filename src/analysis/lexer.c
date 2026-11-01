@@ -22,28 +22,29 @@ bool lexer_has_next(const lexer* l) {
 	return l->line < l->source->size - 1 || (l->line < l->source->size && l->pos < l->source->data[l->line].size);
 }
 
-static int next_char(lexer* l) {
-	if (l->pos >= l->source->data[l->line].size) {
-		l->pos = 0;
-		l->line++;
-		return '\n';
-	}
-	if (l->line >= l->source->size) {
-		return -1;
-	}
-	return l->source->data[l->line].data[l->pos++];
-}
-
 static void skip_whitespace(lexer* l) {
-	int c;
-	do {
-		c = next_char(l);
-	} while ((c == ' ' || c == '\t' || c == '\n') && c != -1);
-	l->pos--;
+	while (l->line < l->source->size) {
+		const char_vector* line = &l->source->data[l->line];
+		if (l->pos >= line->size) {
+			l->pos = 0;
+			l->line++;
+			continue;
+		}
+		const char c = line->data[l->pos];
+		if (c == ' ' || c == '\t' || c == '\n') {
+			l->pos++;
+		}
+		else {
+			break;
+		}
+	}
 }
 
 token lexer_next(lexer* l) {
 	skip_whitespace(l);
+	if (l->line >= l->source->size) {
+		return (token){.type = -1, .value = nullptr, .line = l->line, .pos = l->pos, .length = 0};
+	}
 	regmatch_t match;
 	for (size_t i = 0; i < l->types->size; i++) {
 		char* line = malloc(l->source->data[l->line].size - l->pos + 1);
