@@ -1,115 +1,135 @@
-#include "file_explorer.h"
-#include <ncurses.h>
+#include "explorer.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <dirent.h>
 #include <unistd.h>
-#include <string.h>
-#include <stdlib.h>
 
-#define MAX_FILES 256
-#define MAX_PATH 1024
+explorer explorer_new(void) {
+    explorer e;
+    e.selected = 0;
+    e.top_idx = 0;
+    e.item_count = 0;
+    e.dirty = true;
+    e.active = true;
 
-typedef struct {
-    char name[256];
-    int is_dir;
-} FileItem;
+    if (getcwd(e.cwd, sizeof(e.cwd)) == NULL) {
+        strcpy(e.cwd, ".");
+    }
 
-void run_file_explorer(void) {
-    initscr();
-    noecho();
-    cbreak();
-    keypad(stdscr, TRUE);
-    curs_set(0);
-
-    char cwd[MAX_PATH];
-    int selected = 0;
-    int top_idx = 0;
-
-    while (1) {
-        if (getcwd(cwd, sizeof(cwd)) == NULL) break;
-
-        DIR *dir = opendir(".");
-        if (!dir) break;
-
-        FileItem files[MAX_FILES];
-        int file_count = 0;
-
+    DIR *dir = opendir(".");
+    if (dir) {
         struct dirent *entry;
-        while ((entry = readdir(dir)) != NULL && file_count < MAX_FILES) {
-            strncpy(files[file_count].name, entry->d_name, sizeof(files[file_count].name));
+        while ((entry = readdir(dir)) != NULL && e.item_count < MAX_ITEMS) {
+            strncpy(e.items[e.item_count].name, entry->d_name, sizeof(e.items[e.item_count].name));
 
             DIR *test_dir = opendir(entry->d_name);
             if (test_dir) {
-                files[file_count].is_dir = 1;
+                e.items[e.item_count].is_dir = true;
                 closedir(test_dir);
             } else {
-                files[file_count].is_dir = 0;
+                e.items[e.item_count].is_dir = false;
             }
-            file_count++;
+            e.item_count++;
         }
         closedir(dir);
-
-        if (selected >= file_count) selected = file_count > 0 ? file_count - 1 : 0;
-
-        clear();
-
-        attron(A_BOLD);
-        mvprintw(0, 2, " explorer ");
-        attroff(A_BOLD);
-        mvprintw(1, 2, "Path: %s", cwd);
-        mvprintw(2, 2, "===================================================");
-
-        int max_y, max_x;
-        getmaxyx(stdscr, max_y, max_x);
-        int list_height = max_y - 6;
-
-        for (int i = 0; i < file_count && i < list_height; i++) {
-            int idx = top_idx + i;
-            if (idx >= file_count) break;
-
-            if (idx == selected) {
-                attron(A_REVERSE);
-            }
-
-            if (files[idx].is_dir) {
-                mvprintw(4 + i, 4, "==Dir== %s/", files[idx].name);
-            } else {
-                mvprintw(4 + i, 4, "==File== %s", files[idx].name);
-            }
-
-            if (idx == selected) {
-                attroff(A_REVERSE);
-            }
-        }
-
-        mvprintw(max_y - 2, 2, "[up_arrow/k, down_arrow/j] Move | [Return/Enter/l] Open | [h/backspace] Back | [q] Quit");
-        refresh();
-
-        int ch = getch();
-        if (ch == 'q' || ch == 'Q') {
-            break;
-        } else if (ch == KEY_DOWN || ch == 'j') {
-            if (selected < file_count - 1) {
-                selected++;
-                if (selected >= top_idx + list_height) top_idx++;
-            }
-        } else if (ch == KEY_UP || ch == 'k') {
-            if (selected > 0) {
-                selected--;
-                if (selected < top_idx) top_idx--;
-            }
-        } else if (ch == '\n' || ch == KEY_ENTER || ch == 'l') {
-            if (files[selected].is_dir) {
-                chdir(files[selected].name);
-                selected = 0;
-                top_idx = 0;
-            }
-        } else if (ch == 'h' || ch == KEY_BACKSPACE) {
-            chdir("..");
-            selected = 0;
-            top_idx = 0;
-        }
     }
 
-    endwin();
+    return e;
 }
 
+static void explorer_refresh_dir(explorer *e) {
+    if (getcwd(e->cwd, sizeof(e->cwd)) == NULL) return;
+
+    DIR *dir = opendir(".");
+    if (!dir) return;
+
+    e->item_count = 0;
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL && e->item_count < MAX_ITEMS) {
+        strncpy(e->items[e->item_count].name, entry->d_name, sizeof(e->items[e->item_count].name));
+
+        DIR *test_dir = opendir(entry->d_name);
+        if (test_dir) {
+            e->items[e->item_count].is_dir = true;
+            closedir(test_dir);
+        } else {
+            e->items[e->item_count].is_dir = false;
+        }
+        e->item_count++;
+    }
+    closedir(dir);
+
+    if (e->selected >= e->item_count) {
+        e->selected = e->item_count > 0 ? e->item_count - 1 : 0;
+    }
+    e->top_idx = 0;
+    e->dirty = true;
+}
+
+bool explorer_update(explorer *e, int c) {
+    bool dirty = false;
+
+    if (c == TERM_DOWN_ARROW || c == 'j') {
+        if (e->selected < e->item_count - 1) {
+            e->selected++;
+            e->dirty = true;
+            dirty = true;
+        }
+    }
+    else if (c == TERM_UP_ARROW || c == 'k') {
+        if (e->selected > 0) {
+            e->selected--;
+            e->dirty = true;
+            dirty = true;
+        }
+    }
+    else if (c == '\n' || c == TERM_RIGHT_ARROW || c == 'l') {
+        if (e->item_count > 0 && e->items[e->selected].is_dir) {
+            chdir(e->items[e->selected].name);
+            explorer_refresh_dir(e);
+            dirty = true;
+        }
+    }
+    else if (c == TERM_LEFT_ARROW || c == 'h') {
+        chdir("..");
+        explorer_refresh_dir(e);
+        dirty = true;
+    }
+    else if (c == 'q' || c == 'Q') {
+        e->active = false;
+        dirty = true;
+    }
+
+    return dirty;
+}
+
+void explorer_render(explorer *e, vec2 pos, vec2 size) {
+    term_set_cursor((vec2){.x = pos.x, .y = pos.y});
+    term_write_c(" explorer ", TERM_WHITE | TERM_BRIGHT);
+
+    term_set_cursor((vec2){.x = pos.x, .y = pos.y + 1});
+    term_write_lc(e->cwd, strlen(e->cwd), TERM_WHITE);
+
+    int display_limit = size.y - 3;
+    if (e->selected < e->top_idx) e->top_idx = e->selected;
+    if (e->selected >= e->top_idx + display_limit) e->top_idx = e->selected - display_limit + 1;
+
+    for (unsigned int i = 0; i < (unsigned int)display_limit && i < (unsigned int)e->item_count; i++) {
+        unsigned int idx = e->top_idx + i;
+        term_set_cursor((vec2){.x = pos.x, .y = pos.y + 2 + i});
+
+        unsigned int colour = e->items[idx].is_dir ? EXPLORER_DIR : EXPLORER_FILE;
+
+        if (idx == e->selected) {
+            term_write_cs(">", colour, TERM_UNDERLINE);
+        } else {
+            term_write_c(" ", EXPLORER_NORMAL);
+        }
+
+        char display_buf[300];
+        snprintf(display_buf, sizeof(display_buf), " %s%s", e->items[idx].name, e->items[idx].is_dir ? "/" : "");
+        term_write_lc(display_buf, strlen(display_buf), colour);
+    }
+    e->dirty = false;
+}
