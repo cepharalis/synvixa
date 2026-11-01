@@ -10,7 +10,7 @@ editor editor_new(file* f) {
 	return e;
 }
 
-bool editor_update(editor* e) {
+bool editor_update(editor* e, const net_socket* sockets, const int socket_count) {
 	int c;
 	bool dirty = false;
 	while ((c = term_read()) != TERM_EOF) {
@@ -18,6 +18,14 @@ bool editor_update(editor* e) {
 		if (line_number < e->file->lines.size) {
 			char_vector* l = &e->file->lines.data[line_number];
 			if (c == TERM_BACKSPACE) {
+				char packet[13];
+				packet[0] = EDITOR_PACKET_BACKSPACE;
+				uint32_t length = 8;
+				memcpy(packet + 1, &length, 4);
+				memcpy(packet + 5, &e->cursor, 8);
+				for (int i = 0; i < socket_count; i++) {
+					socket_write(&sockets[i], packet, 13);
+				}
 				if (e->cursor.x == 0) {
 					if (line_number != 0) {
 						char_vector* previous_line = &e->file->lines.data[line_number - 1];
@@ -34,6 +42,14 @@ bool editor_update(editor* e) {
 				}
 			}
 			else if (c == TERM_DELETE) {
+				char packet[13];
+				packet[0] = EDITOR_PACKET_REMOVE_CHAR;
+				uint32_t length = 8;
+				memcpy(packet + 1, &length, 4);
+				memcpy(packet + 5, &e->cursor, 8);
+				for (int i = 0; i < socket_count; i++) {
+					socket_write(&sockets[i], packet, 13);
+				}
 				if (e->cursor.x < l->size) {
 					char_vector_remove(l, e->cursor.x);
 				}
@@ -91,12 +107,22 @@ bool editor_update(editor* e) {
 				char_vector line;
 				char_vector_init(&line, 0);
 				char_vector_vector_insert(&e->file->lines, ++e->cursor.y, line);
+				l = &e->file->lines.data[line_number];
+				auto old_cursor = (vec2){.x = e->cursor.x, .y = e->cursor.y};
 				if (e->cursor.x != l->size) {
 					char_vector* new_line = &e->file->lines.data[e->cursor.y];
 					while (e->cursor.x < l->size) {
 						char_vector_push(new_line, l->data[e->cursor.x]);
 						char_vector_remove(l, e->cursor.x);
 					}
+				}
+				char packet[13];
+				packet[0] = EDITOR_PACKET_ADD_LINE;
+				uint32_t length = 8;
+				memcpy(packet + 1, &length, 4);
+				memcpy(packet + 5, &old_cursor, 8);
+				for (int i = 0; i < socket_count; i++) {
+					socket_write(&sockets[i], packet, 13);
 				}
 				e->cursor.x = 0;
 			}
@@ -107,6 +133,15 @@ bool editor_update(editor* e) {
 				else {
 					char_vector_insert(l, e->cursor.x, (char) c);
 				}
+				char packet[14];
+				packet[0] = EDITOR_PACKET_ADD_CHAR;
+				uint32_t length = 9;
+				memcpy(packet + 1, &length, 4);
+				packet[5] = (char) c;
+				memcpy(packet + 6, &e->cursor, 8);
+				for (int i = 0; i < socket_count; i++) {
+					socket_write(&sockets[i], packet, 14);
+				}
 				e->cursor.x++;
 			}
 		}
@@ -114,6 +149,87 @@ bool editor_update(editor* e) {
 		e->dirty = true;
 	}
 	return dirty;
+}
+
+void editor_process_packet(editor* e, const char id, const char* packet) {
+	if (id == EDITOR_PACKET_ADD_CHAR) {
+		vec2 pos;
+		memcpy(&pos, packet + 1, 8);
+		char_vector_insert(&e->file->lines.data[pos.y], pos.x, packet[0]);
+		if (pos.y == e->cursor.y && pos.x <= e->cursor.x) {
+			e->cursor.x++;
+		}
+		e->dirty = true;
+	}
+	else if (id == EDITOR_PACKET_ADD_LINE) {
+		vec2 pos;
+		memcpy(&pos, packet, 8);
+		char_vector line;
+		char_vector_init(&line, 0);
+		char_vector_vector_insert(&e->file->lines, pos.y, line);
+		char_vector* l = &e->file->lines.data[pos.y - 1];
+		if (pos.x != l->size) {
+			char_vector* new_line = &e->file->lines.data[pos.y];
+			while (pos.x < l->size) {
+				char_vector_push(new_line, l->data[pos.x]);
+				char_vector_remove(l, pos.x);
+			}
+		}
+		if (pos.y <= e->cursor.y) {
+			e->cursor.y++;
+		}
+		else if (pos.y == e->cursor.y - 1 && pos.x <= e->cursor.x) {
+			e->cursor.y++;
+			e->cursor.x -= pos.x;
+		}
+		e->dirty = true;
+	}
+	else if (id == EDITOR_PACKET_REMOVE_CHAR) {
+		vec2 pos;
+		memcpy(&pos, packet, 8);
+		char_vector* l = &e->file->lines.data[pos.y];
+		if (pos.x < l->size) {
+			char_vector_remove(l, pos.x);
+			if (pos.y <= e->cursor.y) {
+				e->cursor.y--;
+			}
+		}
+		else if (pos.y < e->file->lines.size - 1) {
+			const char_vector* next_line = &e->file->lines.data[pos.y + 1];
+			for (unsigned int i = 0; i < next_line->size; i++) {
+				char_vector_push(l, next_line->data[i]);
+			}
+			char_vector_vector_remove(&e->file->lines, pos.y + 1);
+			if (pos.y == e->cursor.y && pos.x >= e->cursor.x) {
+				e->cursor.x--;
+			}
+		}
+		e->dirty = true;
+	}
+	else if (id == EDITOR_PACKET_BACKSPACE) {
+		vec2 pos;
+		memcpy(&pos, packet, 8);
+		char_vector* l = &e->file->lines.data[pos.y];
+		if (pos.x == 0) {
+			if (pos.y != 0) {
+				char_vector* previous_line = &e->file->lines.data[pos.y - 1];
+				for (unsigned int i = 0; i < l->size; i++) {
+					char_vector_push(previous_line, l->data[i]);
+				}
+				char_vector_vector_remove(&e->file->lines, pos.y);
+				if (pos.y <= e->cursor.y) {
+					e->cursor.y--;
+				}
+			}
+		}
+		else {
+			char_vector_remove(l, pos.x - 1);
+			if (pos.y == e->cursor.y && pos.x <= e->cursor.x) {
+				e->cursor.x--;
+			}
+		}
+		e->dirty = true;
+	}
 }
 
 void editor_render(editor* e, const vec2 pos, const vec2 size) {
